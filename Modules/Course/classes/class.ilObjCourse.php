@@ -916,6 +916,11 @@ class ilObjCourse extends ilContainer implements ilMembershipRegistrationCodes
                   'appointments' => $this->prepareAppointments('delete')
             )
         );
+        // seminar-patch: begin
+        if (ilUtil::hasActivePlugin('Services', 'UIComponent', 'uihk', 'CourseBooking')) {
+            ilBookingProcessesUtils::deleteAllProcessInstancesForCourse($this->getRefId());
+        }
+        // seminar-patch: end
         return true;
     }
 
@@ -1661,8 +1666,12 @@ class ilObjCourse extends ilContainer implements ilMembershipRegistrationCodes
         }
 
         $this->getMembersObject()->add($a_user_id, $a_role);
-        $this->getMembersObject()->sendNotification(ilCourseMembershipMailNotification::TYPE_ADMISSION_MEMBER, $a_user_id);
-        $this->getMembersObject()->sendNotification(ilCourseMembershipMailNotification::TYPE_NOTIFICATION_ADMINS, $a_user_id);
+        // seminar-patch: begin
+        if (!ilUtil::hasActivePlugin('Services', 'UIComponent', 'uihk', 'CourseBooking')) {
+            $this->getMembersObject()->sendNotification(ilCourseMembershipMailNotification::TYPE_ADMISSION_MEMBER, $a_user_id);
+            $this->getMembersObject()->sendNotification(ilCourseMembershipMailNotification::TYPE_NOTIFICATION_ADMINS, $a_user_id);
+        }
+        // seminar-patch: end
         ilForumNotification::checkForumsExistsInsert($this->getRefId(), $a_user_id);
     }
 
@@ -1779,9 +1788,16 @@ class ilObjCourse extends ilContainer implements ilMembershipRegistrationCodes
                 continue;
             }
             $this->getMembersObject()->add($user_id, ilParticipants::IL_CRS_MEMBER);
-            $this->getMembersObject()->sendNotification(ilCourseMembershipMailNotification::TYPE_ADMISSION_MEMBER, $user_id, true);
+            // seminar-patch: begin
+            //$this->getMembersObject()->sendNotification(ilCourseMembershipMailNotification::TYPE_ADMISSION_MEMBER, $user_id, true);
             $waiting_list->removeFromList($user_id);
             $this->checkLPStatusSync($user_id);
+            if (ilUtil::hasActivePlugin('Services', 'UIComponent', 'uihk', 'CourseBooking')) {
+                ilBookingProcessesUtils::LearnerIsMovedFromWaitingListToCourse($user_id, $this->getRefId());
+            } else {
+                $this->getMembersObject()->sendNotification(ilCourseMembershipMailNotification::TYPE_ADMISSION_MEMBER, $user_id, true);
+            }
+            // seminar-patch: end
 
             $this->course_logger->info('Assigned user from waiting list to course: ' . $this->getTitle());
             $now++;
@@ -1858,4 +1874,25 @@ class ilObjCourse extends ilContainer implements ilMembershipRegistrationCodes
 
         return $res;
     }
+    // seminar-patch: begin
+    protected ?bool $is_template = null;
+
+    public function isTemplate(): bool
+    {
+        if ($this->is_template === null) {
+            $this->is_template = false;
+
+            if (ilUtil::hasActivePlugin('Services', 'UIComponent', 'uihk', 'CourseBooking')) {
+                /** @var ilCourseTemplatesPlugin $plugin */
+                $plugin = ilUtil::getPlugin('Services', 'UIComponent', 'uihk', 'CourseBooking');
+                $all = $plugin->getCourseTemplatesInstance()->getCoursesWithTemplateStatus();
+                if (in_array($this->getId(), $all)) {
+                    $this->is_template = true;
+                }
+            }
+        }
+
+        return $this->is_template;
+    }
+    // seminar-patch: end
 } //END class.ilObjCourse

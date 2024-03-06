@@ -127,7 +127,11 @@ abstract class ilRegistrationGUI
     {
         $this->getWaitingList()->removeFromList($this->user->getId());
         $parent = $this->tree->getParentId($this->container->getRefId());
-
+        // seminar-patch: begin
+        if (ilUtil::hasActivePlugin('Services', 'UIComponent', 'uihk', 'CourseBooking')) {
+            ilBookingProcessesUtils::LearnerRetractsFreeFromWaitingList($this->user->getId(), $this->container->getRefId());
+        }
+        // seminar-patch: end
         $message = sprintf(
             $this->lng->txt($this->container->getType() . '_removed_from_waiting_list'),
             $this->container->getTitle()
@@ -234,6 +238,13 @@ abstract class ilRegistrationGUI
         ilMemberAgreementGUI::addExportFieldInfo($this->form, $this->obj_id, $this->type);
 
         ilMemberAgreementGUI::addCustomFields($this->form, $this->obj_id, $this->type);
+        // seminar-patch: begin
+        if (ilUtil::hasActivePlugin('Services', 'UIComponent', 'uihk', 'CourseBooking')) {
+            if (strtolower($this->ctrl->getCmdClass() ?? '') !== strtolower(ilCourseBookingUIHookGUI::class)) {
+                ilMemberAgreementGUI::setCourseDefinedFieldValues($this->form, $this->obj_id, $this->user->getId());
+            }
+        }
+        // seminar-patch: end
 
         // Checkbox agreement
         if ($this->privacy->confirmationRequired($this->type)) {
@@ -260,7 +271,17 @@ abstract class ilRegistrationGUI
         $cdf = new ilNonEditableValueGUI($this->lng->txt('ps_crs_user_fields'));
         $cdf->setValue($this->lng->txt($this->type . '_ps_cdf_info'));
         $cdf->setRequired(true);
+        // seminar-patch: begin
+        $numFields = 0;
+        // seminar-patch: end
         foreach ($cdf_fields as $field_obj) {
+            // seminar-patch: begin
+            if (ilMemberAgreementGUI::shouldHideCertainFields() &&
+                in_array($field_obj->getName(), ilMemberAgreementGUI::getHiddenFields())) {
+                continue;
+            }
+            $numFields++;
+            // seminar-patch: end
             switch ($field_obj->getType()) {
                 case ilCourseDefinedFieldDefinition::IL_CDF_TYPE_SELECT:
                     $select = new ilSelectInputGUI($field_obj->getName(), 'cdf[' . $field_obj->getId() . ']');
@@ -311,6 +332,12 @@ abstract class ilRegistrationGUI
         $required_fullfilled = true;
         $value = '';
         foreach (ilCourseDefinedFieldDefinition::_getFields($this->container->getId()) as $field_obj) {
+            // seminar-patch: begin
+            if (ilMemberAgreementGUI::shouldHideCertainFields() &&
+                in_array($field_obj->getName(), ilMemberAgreementGUI::getHiddenFields())) {
+                continue;
+            }
+            // seminar-patch: end
             switch ($field_obj->getType()) {
                 case ilCourseDefinedFieldDefinition::IL_CDF_TYPE_SELECT:
                     $cdf_value = $this->http->wrapper()->post()->retrieve(
@@ -349,10 +376,29 @@ abstract class ilRegistrationGUI
                     );
                     break;
             }
-
-            $course_user_data = new ilCourseUserData($this->user->getId(), $field_obj->getId());
-            $course_user_data->setValue($value);
-            $course_user_data->update();
+            // seminar-patch: begin
+            if (isset($_SESSION['post_vars']) &&
+                is_array($_SESSION['post_vars']) &&
+                array_key_exists('id', $_SESSION['post_vars']) &&
+                is_array($_SESSION['post_vars']['id'])) {
+                foreach ($_SESSION['post_vars']['id'] as $usr_id) {
+                    $course_user_data = new ilCourseUserData((int) $usr_id, $field_obj->getId());
+                    $course_user_data->setValue($value);
+                    $course_user_data->update();
+                }
+            } elseif (isset($_SESSION['employee_bookings']) &&
+                is_array($_SESSION['employee_bookings'])) {
+                foreach ($_SESSION['employee_bookings'] as $usr_id) {
+                    $course_user_data = new ilCourseUserData((int) $usr_id, $field_obj->getId());
+                    $course_user_data->setValue($value);
+                    $course_user_data->update();
+                }
+            } else {
+                $course_user_data = new ilCourseUserData($this->user->getId(), $field_obj->getId());
+                $course_user_data->setValue($value);
+                $course_user_data->update();
+            }
+            // seminar-patch: end
 
             // #14220
             if ($field_obj->isRequired() && $value === "") {
@@ -399,16 +445,51 @@ abstract class ilRegistrationGUI
         $this->tpl->setContent($this->form->getHTML());
     }
 
+    // seminar-patch: begin
+    public function getHTML(): string
+    {
+        return $this->initForm()->getHTML();
+    }
+
+    // seminar-patch: end
     public function join(): void
     {
         $form = $this->initForm();
         if (!$form->checkInput() || !$this->validate()) {
             $form->setValuesByPost();
+            // seminar-patch: begin
             if ($this->join_error) {
-                $this->tpl->setOnScreenMessage('failure', $this->join_error);
+                $message = $this->join_error;
             } else {
-                $this->tpl->setOnScreenMessage('failure', $this->lng->txt('err_check_input'));
+                $message = $this->lng->txt('err_check_input');
             }
+
+            if (isset($_SESSION['post_vars']['id']) ||
+                (
+                    isset($_SESSION['employee_bookings']) &&
+                    is_array($_SESSION['employee_bookings'])
+                )
+            ) {
+                global $DIC;
+                if (ilUtil::hasActivePlugin('Services', 'UIComponent', 'uihk', 'CourseBooking')) {
+                    ilSession::set('EmployeeBookings.confirmBooking.post', $this->http->request()->getParsedBody());
+
+                    $this->tpl->setOnScreenMessage('failure', $message, true);
+
+                    $this->ctrl->setParameterByClass(
+                        ilCourseBookingUIHookGUI::class,
+                        'ref_id',
+                        $this->container->getRefId()
+                    );
+
+                    $this->ctrl->redirectByClass(
+                        [ilUIPluginRouterGUI::class, ilCourseBookingUIHookGUI::class],
+                        'EmployeeBookings.failedConfirmBooking'
+                    );
+                }
+            }
+            $this->tpl->setOnScreenMessage('failure', $message);
+            // seminar-patch: end
             $this->show($form);
             return;
         }
@@ -456,18 +537,24 @@ abstract class ilRegistrationGUI
      */
     protected function addCommandButtons(): void
     {
+        // seminar-patch: begin
+        $bookingForEmployees = (
+            isset($_SESSION['employee_bookings']) &&
+            is_array($_SESSION['employee_bookings'])
+        );
         if (
             $this->isRegistrationPossible() &&
             $this->isWaitingListActive() &&
-            !$this->getWaitingList()->isOnList($this->user->getId())
+            (!$this->getWaitingList()->isOnList($this->user->getId()) || $bookingForEmployees)
         ) {
             $this->form->addCommandButton('join', $this->lng->txt('mem_add_to_wl'));
             $this->form->addCommandButton('cancel', $this->lng->txt('cancel'));
-        } elseif ($this->isRegistrationPossible() && !$this->getWaitingList()->isOnList($this->user->getId())) {
+        } elseif ($this->isRegistrationPossible() &&
+            (!$this->getWaitingList()->isOnList($this->user->getId()) || $bookingForEmployees)) {
             $this->form->addCommandButton('join', $this->lng->txt('join'));
             $this->form->addCommandButton('cancel', $this->lng->txt('cancel'));
         }
-        if ($this->getWaitingList()->isOnList($this->user->getId())) {
+        if (!$bookingForEmployees && $this->getWaitingList()->isOnList($this->user->getId())) {
             $this->tpl->setOnScreenMessage('question', sprintf(
                 $this->lng->txt($this->container->getType() . '_cancel_waiting_list'),
                 $this->container->getTitle()
@@ -475,6 +562,7 @@ abstract class ilRegistrationGUI
             $this->form->addCommandButton('leaveWaitingList', $this->lng->txt('leave_waiting_list'));
             $this->form->addCommandButton('cancel', $this->lng->txt('cancel'));
         }
+        // seminar-patch: end
     }
 
     protected function updateSubscriptionRequest(): void

@@ -372,9 +372,30 @@ abstract class ilParticipant
                 'role_id' => $a_role
             )
         );
+        // seminar-patch: begin
+        $this->handleAgreements($a_usr_id);
+        // seminar-patch: end
         return true;
     }
+    // seminar-patch: begin
+    protected function handleAgreements(int $a_usr_id): void
+    {
+        global $DIC;
 
+        if (
+            !$DIC['ilClientIniFile']->groupExists('seminar') ||
+            !$DIC['ilClientIniFile']->variableExists('seminar', 'crs_agr_auto_accept') ||
+            1 === (int) $DIC['ilClientIniFile']->readVariable('seminar', 'crs_agr_auto_accept')
+        ) {
+            $agreement = new ilMemberAgreement($a_usr_id, $this->obj_id);
+            if (!$agreement->isAccepted()) {
+                $agreement->setAcceptanceTime(time());
+                $agreement->setAccepted(true);
+                $agreement->save();
+            }
+        }
+    }
+    // seminar-patch: end
     public function delete(int $a_usr_id): void
     {
         $this->recommended_content_manager->removeObjectRecommendation($a_usr_id, $this->ref_id);

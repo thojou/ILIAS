@@ -29,7 +29,9 @@
 /ilias.ini.php
 /ilias.log
 /db_template_writer.php
-/setup/sql/dbupdate_custom.php
+# seminar-patch: begin
+#/setup/sql/dbupdate_custom.php
+# seminar-patch: end
 /install_client.php
 /Services/GlobalScreen/artifacts/global_screen_providers.php
 /Services/Style/System/data/data.php

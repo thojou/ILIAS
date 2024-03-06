@@ -55,6 +55,9 @@ class ilInfoScreenGUI
     public string $form_action;
     protected bool $booking_enabled = false;
     protected bool $availability_enabled = true;
+    // seminar-patch: begin
+    public bool $suppress_object_info = false;
+    // seminar-patch: end
     protected bool $hidden = false;
     protected array $section = [];
     protected array $block_property = [];
@@ -425,7 +428,11 @@ class ilInfoScreenGUI
         $ilUser = $this->user;
         $ilAccess = $this->access;
         $tree = $this->tree;
-
+        // seminar-patch: begin
+        if ($this->suppress_object_info) {
+            return;
+        }
+        // seminar-patch: end
         // resource bookings
         if ($this->booking_enabled) {
             $booking_adapter = new ilBookingInfoScreenAdapter($this);

@@ -98,6 +98,9 @@ class ilCourseMembershipMailNotification extends ilMailNotification
 
     public function send(): bool
     {
+        // seminar-patch: begin
+        global $DIC;
+        // seminar-patch: end
         if (
             $this->getRefId() &&
             in_array($this->getType(), array(self::TYPE_ADMISSION_MEMBER))) {
@@ -119,6 +122,43 @@ class ilCourseMembershipMailNotification extends ilMailNotification
             case self::TYPE_ADMISSION_MEMBER:
 
                 foreach ($this->getRecipients() as $rcp) {
+                    // seminar-patch: begin
+                    if (ilUtil::hasActivePlugin('Services', 'UIComponent', 'uihk', 'CourseBooking')) {
+                        // https://support.iliasnet.de/view.php?id=8725
+                        $ref_ids = ilObject::_getAllReferences($this->getObjId());
+                        $ref_id = current($ref_ids);
+                        /** @var ilObjCourse $crs */
+                        $crs = ilObjectFactory::getInstanceByRefId($ref_id);
+
+                        if ($rcp == $DIC->user()->getId()) {
+                            $mail_data_object = new ilParticipantInvitationMailData();
+                            $mail_data_object->setCourse($crs);
+                            $mail_data_object->setRecipientUserId($rcp);
+                            $api = new ilMailTemplateManagementAPI();
+                            $api->sendMail(
+                                'Booking',
+                                'Buchungsbestätigung bei Selbstbuchung (6.1 / Mail 1)',
+                                ilObjUser::_lookupLanguage($rcp),
+                                $mail_data_object
+                            );
+                        } elseif ($crs->getSubscriptionType() === ilCourseConstants::IL_CRS_SUBSCRIPTION_WORKFLOW) {
+                            ilBookingProcessesUtils::CourseAdminBooksProcessCourse(
+                                (int) $rcp,
+                                $crs->getRefId(),
+                                $DIC->user()->getId(),
+                                true
+                            );
+                        } else {
+                            ilBookingProcessesUtils::CourseAdminBooksNonWorkflowCourse(
+                                (int) $rcp,
+                                $crs->getRefId(),
+                                $DIC->user()->getId(),
+                                true
+                            );
+                        }
+                        continue;
+                    }
+                    // seminar-patch: end
                     $this->initLanguage($rcp);
                     $this->initMail();
                     $this->setSubject(
@@ -140,7 +180,11 @@ class ilCourseMembershipMailNotification extends ilMailNotification
                 break;
 
             case self::TYPE_ACCEPTED_SUBSCRIPTION_MEMBER:
-
+                // seminar-patch: begin
+                if (!$DIC->settings()->get('mail_crs_member_notification', true)) {
+                    return false;
+                }
+                // seminar-patch: end
                 foreach ($this->getRecipients() as $rcp) {
                     $this->initLanguage($rcp);
                     $this->initMail();
@@ -163,7 +207,11 @@ class ilCourseMembershipMailNotification extends ilMailNotification
                 break;
 
             case self::TYPE_REFUSED_SUBSCRIPTION_MEMBER:
-
+                // seminar-patch: begin
+                if (!$DIC->settings()->get('mail_crs_member_notification', true)) {
+                    return false;
+                }
+                // seminar-patch: end
                 foreach ($this->getRecipients() as $rcp) {
                     $this->initLanguage($rcp);
                     $this->initMail();
@@ -183,6 +231,11 @@ class ilCourseMembershipMailNotification extends ilMailNotification
                 break;
 
             case self::TYPE_STATUS_CHANGED:
+                // seminar-patch: begin
+                if (!$DIC->settings()->get('mail_crs_member_notification', true)) {
+                    return false;
+                }
+                // seminar-patch: end
                 foreach ($this->getRecipients() as $rcp) {
                     $this->initLanguage($rcp);
                     $this->initMail();
@@ -210,7 +263,29 @@ class ilCourseMembershipMailNotification extends ilMailNotification
                 break;
 
             case self::TYPE_DISMISS_MEMBER:
+                // seminar-patch: begin
+                if (ilUtil::hasActivePlugin('Services', 'UIComponent', 'uihk', 'CourseBooking')) {
+                    if (!$DIC->settings()->get('mail_crs_member_notification', true)) {
+                        return false;
+                    }
 
+                    // https://support.iliasnet.de/view.php?id=8698
+                    $ref_ids = ilObject::_getAllReferences($this->getObjId());
+                    $ref_id = current($ref_ids);
+                    /** @var ilObjCourse $crs */
+                    $crs = ilObjectFactory::getInstanceByRefId($ref_id);
+                    foreach ($this->getRecipients() as $rcp) {
+                        ilBookingProcessesUtils::CourseAdminCancellationNonWorkflow(
+                            (int) $rcp,
+                            $crs->getRefId(),
+                            $DIC->user()->getId(),
+                            '',
+                            true
+                        );
+                    }
+                    return true;
+                }
+                // seminar-patch: end
                 foreach ($this->getRecipients() as $rcp) {
                     $this->initLanguage($rcp);
                     $this->initMail();
@@ -228,7 +303,11 @@ class ilCourseMembershipMailNotification extends ilMailNotification
                 break;
 
             case self::TYPE_BLOCKED_MEMBER:
-
+                // seminar-patch: begin
+                if (!$DIC->settings()->get('mail_crs_member_notification', true)) {
+                    return false;
+                }
+                // seminar-patch: end
                 foreach ($this->getRecipients() as $rcp) {
                     $this->initLanguage($rcp);
                     $this->initMail();
@@ -246,7 +325,11 @@ class ilCourseMembershipMailNotification extends ilMailNotification
                 break;
 
             case self::TYPE_UNBLOCKED_MEMBER:
-
+                // seminar-patch: begin
+                if (!$DIC->settings()->get('mail_crs_member_notification', true)) {
+                    return false;
+                }
+                // seminar-patch: end
                 foreach ($this->getRecipients() as $rcp) {
                     $this->initLanguage($rcp);
                     $this->initMail();
@@ -366,6 +449,11 @@ class ilCourseMembershipMailNotification extends ilMailNotification
                 break;
 
             case self::TYPE_UNSUBSCRIBE_MEMBER:
+                // seminar-patch: begin
+                if (!$DIC->settings()->get('mail_crs_member_notification', true)) {
+                    return false;
+                }
+                // seminar-patch: end
                 foreach ($this->getRecipients() as $rcp) {
                     $this->initLanguage($rcp);
                     $this->initMail();
@@ -385,7 +473,11 @@ class ilCourseMembershipMailNotification extends ilMailNotification
                 break;
 
             case self::TYPE_SUBSCRIBE_MEMBER:
-
+                // seminar-patch: begin
+                if (!$DIC->settings()->get('mail_crs_member_notification', true)) {
+                    return false;
+                }
+                // seminar-patch: end
                 foreach ($this->getRecipients() as $rcp) {
                     $this->initLanguage($rcp);
                     $this->initMail();
@@ -409,6 +501,11 @@ class ilCourseMembershipMailNotification extends ilMailNotification
                 break;
 
             case self::TYPE_WAITING_LIST_MEMBER:
+                // seminar-patch: begin
+                if (!$DIC->settings()->get('mail_crs_member_notification', true)) {
+                    return false;
+                }
+                // seminar-patch: end
                 foreach ($this->getRecipients() as $rcp) {
                     $this->initLanguage($rcp);
                     $this->initMail();

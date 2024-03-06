@@ -905,7 +905,18 @@ class ilObjectListGUI
             }
             // END WebDAV Display warning for invisible files and files with special characters
         }
-
+        // seminar-patch: begin
+        // user interface plugin slot (not used for HTML transformation?!)
+        $uip = new ilUIHookProcessor(
+            'Services/Object',
+            'object_list_gui',
+            [
+                'object_list_gui' => $this,
+                'obj_id' => $this->obj_id
+            ]
+        );
+        $uip->getHTML('');
+        // seminar-patch: end
         return $props;
     }
 

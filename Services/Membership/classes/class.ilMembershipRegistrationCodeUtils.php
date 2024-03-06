@@ -100,7 +100,18 @@ class ilMembershipRegistrationCodeUtils
             if (in_array(ilObject::_lookupObjId($ref_id), $obj_ids)) {
                 $member_obj = ilObjectFactory::getInstanceByRefId($ref_id, false);
                 if ($member_obj instanceof ilObjCourse) {
+                    // seminar-patch: begin
+                    $part = ilCourseParticipants::_getInstanceByObjId($member_obj->getId());
+                    $wasAssignedBefore = $part->isAssigned($ilUser->getId());
+                    // seminar-patch: end
                     $member_obj->register($ilUser->getId(), ilCourseConstants::CRS_MEMBER);
+                    // seminar-patch: begin
+                    if (ilUtil::hasActivePlugin('Services', 'UIComponent', 'uihk', 'CourseBooking')) {
+                        if (!$wasAssignedBefore) {
+                            ilBookingProcessesUtils::LearnerLinksIntoCourse($ilUser->getId(), $ref_id);
+                        }
+                    }
+                    // seminar-patch: end
                 }
                 if ($member_obj instanceof ilObjGroup) {
                     $member_obj->register($ilUser->getId(), ilParticipants::IL_GRP_MEMBER, true);

@@ -184,8 +184,18 @@ class ilMemberAgreementGUI
             $cdf->setValue($lng->txt($a_type . '_ps_cdf_info'));
             $cdf->setRequired(true);
         }
-
+        // seminar-patch: begin
+        $numFields = 0;
+        // seminar-patch: end
         foreach ($cdf_fields as $field_obj) {
+            // seminar-patch: begin
+            if ($a_mode !== 'edit' &&
+                self::shouldHideCertainFields() &&
+                in_array($field_obj->getName(), self::getHiddenFields())) {
+                continue;
+            }
+            $numFields++;
+            // seminar-patch: end
             switch ($field_obj->getType()) {
                 case ilCourseDefinedFieldDefinition::IL_CDF_TYPE_SELECT:
 
@@ -246,6 +256,11 @@ class ilMemberAgreementGUI
                     break;
             }
         }
+        // seminar-patch: begin
+        if ($numFields === 0) {
+            return $form;
+        }
+        // seminar-patch: end
         if ($a_mode === 'user') {
             $form->addItem($cdf);
         }
@@ -304,7 +319,11 @@ class ilMemberAgreementGUI
             if (!$current_value) {
                 continue;
             }
-
+            // seminar-patch: begin
+            if (!$form->getItemByPostVar('cdf_' . $field_obj->getId())) {
+                continue;
+            }
+            // seminar-patch: end
             switch ($field_obj->getType()) {
                 case ilCourseDefinedFieldDefinition::IL_CDF_TYPE_SELECT:
 
@@ -409,4 +428,31 @@ class ilMemberAgreementGUI
             $this->tpl->setOnScreenMessage('failure', $message);
         }
     }
+    // seminar-patch: begin
+
+    /**
+     * @var null|list<string>
+     */
+    protected static ?array $hidden_fields = null;
+
+    public static function shouldHideCertainFields(): bool
+    {
+        return count(self::getHiddenFields()) > 0;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public static function getHiddenFields(): array
+    {
+        global $DIC;
+
+        if (self::$hidden_fields === null) {
+            $fieldNames = (string) $DIC['ilClientIniFile']->readVariable('seminar', 'hidden_crs_usr_fields');
+            self::$hidden_fields = array_filter(array_map('trim', explode(',', $fieldNames)));
+        }
+
+        return self::$hidden_fields;
+    }
+    // seminar-patch: end
 }

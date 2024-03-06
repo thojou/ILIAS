@@ -1195,6 +1195,11 @@ class ilObjUser extends ilObject
 
         // delete object data
         parent::delete();
+        // seminar-patch: begin
+        if (ilUtil::hasActivePlugin('Services', 'UIComponent', 'uihk', 'CourseBooking')) {
+            ilBookingProcessesUtils::deleteAllProcessInstancesForUser($this->getId());
+        }
+        // seminar-patch: end
         return true;
     }
 

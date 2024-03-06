@@ -52,6 +52,9 @@ class ilCourseConstants
     public const IL_CRS_SUBSCRIPTION_CONFIRMATION = 2;
     public const IL_CRS_SUBSCRIPTION_DIRECT = 3;
     public const IL_CRS_SUBSCRIPTION_PASSWORD = 4;
+    // seminar-patch: begin
+    public const IL_CRS_SUBSCRIPTION_WORKFLOW = 5;
+    // seminar-patch: end
     public const IL_CRS_ARCHIVE_DOWNLOAD = 3;
     public const IL_CRS_ARCHIVE_NONE = 0;
 }

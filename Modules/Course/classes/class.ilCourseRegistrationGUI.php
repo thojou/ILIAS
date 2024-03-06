@@ -40,7 +40,9 @@ class ilCourseRegistrationGUI extends ilRegistrationGUI
             $this->tabs->activateTab('leave');
         }
 
-        if (!$this->access->checkAccess('join', '', $this->getRefId())) {
+        // seminar-patch: begin
+        if (!isset($_SESSION['employee_bookings']) && !$this->access->checkAccess('join', '', $this->getRefId())) {
+            // seminar-patch: end
             $this->ctrl->setReturn($this->parent_gui, 'infoScreen');
             $this->ctrl->returnToParent($this);
             return;
@@ -177,7 +179,13 @@ class ilCourseRegistrationGUI extends ilRegistrationGUI
             if (
                 !$free && !$this->container->enabledWaitingList()) {
                 // Disable registration
-                $this->enableRegistration(false);
+                // seminar-patch: begin
+                $this->enableRegistration(
+                    isset($_SESSION['employee_bookings']) &&
+                    is_array($_SESSION['employee_bookings']) &&
+                    $_SESSION['employee_bookings'] !== []
+                );
+                // seminar-patch: end
                 $this->tpl->setOnScreenMessage('failure', $this->lng->txt('mem_alert_no_places'));
             #$alert = $this->lng->txt('mem_alert_no_places');
             } elseif (
@@ -264,7 +272,10 @@ class ilCourseRegistrationGUI extends ilRegistrationGUI
                 $sub->setInfo($this->lng->txt('crs_info_reg_confirmation'));
                 $sub->setCols(40);
                 $sub->setRows(5);
-                if ($this->participants->isSubscriber($this->user->getId())) {
+                // seminar-patch: begin
+                if ((!isset($_GET['fallbackCmd']) || $_GET['fallbackCmd'] !== 'book_employees') &&
+                    $this->participants->isSubscriber($this->user->getId())) {
+                    // seminar-patch: end
                     $sub_data = $this->participants->getSubscriberData($this->user->getId());
                     $sub->setValue($sub_data['subject']);
                     $sub->setInfo('');
@@ -284,7 +295,11 @@ class ilCourseRegistrationGUI extends ilRegistrationGUI
         parent::addCommandButtons();
         switch ($this->container->getSubscriptionType()) {
             case ilCourseConstants::IL_CRS_SUBSCRIPTION_CONFIRMATION:
-                if ($this->participants->isSubscriber($this->user->getId())) {
+            // seminar-patch: begin
+            case ilCourseConstants::IL_CRS_SUBSCRIPTION_WORKFLOW:
+                if ((!isset($_GET['fallbackCmd']) || $_GET['fallbackCmd'] !== 'book_employees') &&
+                    $this->participants->isSubscriber($this->user->getId())) {
+                    // seminar-patch: end
                     $this->form->clearCommandButtons();
                     $this->form->addCommandButton(
                         'updateSubscriptionRequest',
@@ -345,29 +360,84 @@ class ilCourseRegistrationGUI extends ilRegistrationGUI
         return true;
     }
 
-    protected function add()
+    // seminar-patch: begin
+    protected function add(?int $by_list = null): void
+    // seminar-patch: end
     {
+        // seminar-patch: begin
+        global $DIC;
+        $user = $this->user;
+        $has_list = false;
+        if (ilUtil::hasActivePlugin('Services', 'UIComponent', 'uihk', 'CourseBooking')) {
+            if ($by_list === null && isset($_SESSION['employee_bookings']) && is_array($_SESSION['employee_bookings'])) {
+                foreach ($_SESSION['employee_bookings'] as $booking) {
+                    $this->add((int) $booking);
+                }
+                unset($_SESSION['employee_bookings']);
+
+                $this->ctrl->setParameterByClass(
+                    ilCourseBookingUIHookGUI::class,
+                    'ref_id',
+                    $this->container->getRefId()
+                );
+                $this->ctrl->redirectByClass(
+                    [ilUIPluginRouterGUI::class, ilCourseBookingUIHookGUI::class],
+                    'EmployeeBookings'
+                );
+            } elseif ($by_list !== null) {
+                $user = new ilObjUser($by_list);
+            }
+            $has_list = isset($_SESSION['employee_bookings']);
+        }
+        // seminar-patch: end
         // set aggreement accepted
         $this->setAccepted(true);
 
         $free = max(0, $this->container->getSubscriptionMaxMembers() - $this->participants->getCountMembers());
         $waiting_list = new ilCourseWaitingList($this->container->getId());
-        if ($this->container->isSubscriptionMembershipLimited() && $this->container->enabledWaitingList() && (!$free || $waiting_list->getCountUsers())) {
-            $waiting_list->addToList($this->user->getId());
+        // seminar-patch: begin
+        if ($this->container->enabledWaitingList() &&
+            (!$free || $waiting_list->getCountUsers()) && (
+                $this->container->isSubscriptionMembershipLimited() &&
+                !(
+                    $this->container->getSubscriptionType() === ilCourseConstants::IL_CRS_SUBSCRIPTION_CONFIRMATION ||
+                    $this->container->getSubscriptionType() === ilCourseConstants::IL_CRS_SUBSCRIPTION_WORKFLOW
+                )
+            )) {
+            $waiting_list->addToList($user->getId());
+            // seminar-patch: end
             $info = sprintf(
                 $this->lng->txt('crs_added_to_list'),
-                $waiting_list->getPosition($this->user->getId())
+                $waiting_list->getPosition($user->getId())
             );
             $this->tpl->setOnScreenMessage('success', $info, true);
 
-            $this->participants->sendNotification(
-                ilCourseMembershipMailNotification::TYPE_NOTIFICATION_ADMINS_REGISTRATION_REQUEST,
-                $this->user->getId()
-            );
-            $this->participants->sendNotification(
-                ilCourseMembershipMailNotification::TYPE_WAITING_LIST_MEMBER,
-                $this->user->getId()
-            );
+            // seminar-patch: begin
+            if (ilUtil::hasActivePlugin('Services', 'UIComponent', 'uihk', 'CourseBooking')) {
+                ilBookingProcessesUtils::LearnerIsBookedToWaitingList($user->getId(), $this->ref_id);
+
+                if ($has_list) {
+                    $this->ctrl->setParameterByClass(
+                        ilCourseBookingUIHookGUI::class,
+                        'ref_id',
+                        $this->container->getRefId()
+                    );
+                    $this->ctrl->redirectByClass(
+                        [ilUIPluginRouterGUI::class, ilCourseBookingUIHookGUI::class],
+                        'EmployeeBookings'
+                    );
+                }
+            } else {
+                $this->participants->sendNotification(
+                    ilCourseMembershipMailNotification::TYPE_NOTIFICATION_ADMINS_REGISTRATION_REQUEST,
+                    $user->getId()
+                );
+                $this->participants->sendNotification(
+                    ilCourseMembershipMailNotification::TYPE_WAITING_LIST_MEMBER,
+                    $user->getId()
+                );
+            }
+            // seminar-patch: end
             $this->ctrl->setParameterByClass(
                 "ilrepositorygui",
                 "ref_id",
@@ -377,21 +447,64 @@ class ilCourseRegistrationGUI extends ilRegistrationGUI
         }
 
         switch ($this->container->getSubscriptionType()) {
+            // seminar-patch: begin
             case ilCourseConstants::IL_CRS_SUBSCRIPTION_CONFIRMATION:
-                $this->participants->addSubscriber($this->user->getId());
-                $this->participants->updateSubscriptionTime($this->user->getId(), time());
+                $this->participants->addSubscriber($user->getId());
+                $this->participants->updateSubscriptionTime($user->getId(), time());
 
                 $subject = $this->http->wrapper()->post()->retrieve(
                     'subject',
                     $this->refinery->kindlyTo()->string()
                 );
-                $this->participants->updateSubject($this->user->getId(), $subject);
-                $this->participants->sendNotification(
-                    ilCourseMembershipMailNotification::TYPE_NOTIFICATION_ADMINS_REGISTRATION_REQUEST,
-                    $this->user->getId()
-                );
+                $this->participants->updateSubject($user->getId(), $subject);
+                if (ilUtil::hasActivePlugin('Services', 'UIComponent', 'uihk', 'CourseBooking')) {
+                    if ($by_list === null) {
+                        ilBookingProcessesUtils::LearnerRequestsConfirmationCourse(
+                            $user->getId(),
+                            $this->getContainer()->getRefId()
+                        );
+                    } else {
+                        $course_participants = ilCourseParticipants::_getInstanceByObjId($this->getContainer()->getId());
+                        $admins = $course_participants->getAdmins();
+                        if (in_array($user->getId(), $admins)) {
+                            ilBookingProcessesUtils::CourseAdminBooksConfirmationCourse(
+                                $user->getId(),
+                                $this->getContainer()->getRefId(),
+                                $user->getId()
+                            );
+                        } else {
+                            ilBookingProcessesUtils::SuperiorBooksConfirmationCourse(
+                                $user->getId(),
+                                $this->getContainer()->getRefId(),
+                                $user->getId()
+                            );
+                            // AND NOTHING IS GONNA HAPPEN - BY DESIGN!
+                        }
+                    }
+                } else {
+                    $this->participants->sendNotification(
+                        ilCourseMembershipMailNotification::TYPE_NOTIFICATION_ADMINS_REGISTRATION_REQUEST,
+                        $user->getId()
+                    );
+                }
+                // seminar-patch: end
 
                 $this->tpl->setOnScreenMessage('success', $this->lng->txt("application_completed"), true);
+                // seminar-patch: begin
+                if (ilUtil::hasActivePlugin('Services', 'UIComponent', 'uihk', 'CourseBooking')) {
+                    if ($has_list) {
+                        $this->ctrl->setParameterByClass(
+                            ilCourseBookingUIHookGUI::class,
+                            'ref_id',
+                            $this->container->getRefId()
+                        );
+                        $this->ctrl->redirectByClass(
+                            [ilUIPluginRouterGUI::class, ilCourseBookingUIHookGUI::class],
+                            'EmployeeBookings'
+                        );
+                    }
+                }
+                // seminar-patch: end
                 $this->ctrl->setParameterByClass(
                     "ilrepositorygui",
                     "ref_id",
@@ -399,35 +512,191 @@ class ilCourseRegistrationGUI extends ilRegistrationGUI
                 );
                 $this->ctrl->redirectByClass("ilrepositorygui", "");
                 break;
+            // seminar-patch: begin
+            case ilCourseConstants::IL_CRS_SUBSCRIPTION_WORKFLOW:
+                if (!ilUtil::hasActivePlugin('Services', 'UIComponent', 'uihk', 'CourseBooking')) {
+                    break;
+                }
+                $isSuperior = ilBookingProcessesUtils::isUserSuperior($user->getId());
+                $directSuperiorJoin = $isSuperior && $by_list === null;
 
+                if ($directSuperiorJoin) {
+                    ilBookingProcessesUtils::SuperiorBooksProcessCourse(
+                        $user->getId(),
+                        $this->container->getRefId(),
+                        $user->getId()
+                    );
+                } else {
+                    $subject = $this->http->wrapper()->post()->retrieve(
+                        'subject',
+                        $this->refinery->byTrying([
+                            $this->refinery->kindlyTo()->string(),
+                            $this->refinery->always('')
+                        ])
+                    );
+
+                    if (!$this->participants->isSubscriber($user->getId())) {
+                        $this->participants->addSubscriber($user->getId());
+                    }
+                    $this->participants->updateSubscriptionTime($user->getId(), time());
+                    $this->participants->updateSubject($user->getId(), ilUtil::stripSlashes($subject));
+
+                    /*$this->participants->sendNotification(
+                        $this->participants->NOTIFY_SUBSCRIPTION_REQUEST,
+                        $ilUser->getId()
+                    );*/
+                }
+
+                if (!$directSuperiorJoin) {
+                    if ($by_list === null) {
+                        ilBookingProcessesUtils::LearnerRequestsProcessCourse(
+                            $user->getId(),
+                            $this->getContainer()->getRefId()
+                        );
+                    } else {
+                        $actor = $DIC->user();
+                        ilBookingProcessesUtils::SuperiorBooksProcessCourse(
+                            $user->getId(),
+                            $this->getContainer()->getRefId(),
+                            $actor->getId()
+                        );
+                    }
+                }
+
+                if ($directSuperiorJoin) {
+                    $this->tpl->setOnScreenMessage('success', $this->lng->txt('crs_subscription_successful'), true);
+                } else {
+                    $this->tpl->setOnScreenMessage('success', $this->lng->txt('application_completed'), true);
+                }
+
+                if ($by_list === null) {
+                    if ($has_list) {
+                        $this->ctrl->setParameterByClass(
+                            ilCourseBookingUIHookGUI::class,
+                            'ref_id',
+                            $this->container->getRefId()
+                        );
+                        $this->ctrl->redirectByClass(
+                            [ilUIPluginRouterGUI::class, ilCourseBookingUIHookGUI::class],
+                            'EmployeeBookings'
+                        );
+                    }
+                    $this->ctrl->setParameterByClass(
+                        ilRepositoryGUI::class,
+                        'ref_id',
+                        $this->tree->getParentId($this->container->getRefId())
+                    );
+                    $this->ctrl->redirectByClass(ilRepositoryGUI::class);
+                }
+                break;
+            // seminar-patch: end
             default:
-
+                // seminar-patch: begin
+                $directMembershipProcessTriggered = false;
                 if ($this->container->isSubscriptionMembershipLimited() && $this->container->getSubscriptionMaxMembers()) {
                     $success = $GLOBALS['DIC']['rbacadmin']->assignUserLimited(
                         ilParticipants::getDefaultMemberRole($this->container->getRefId()),
-                        $this->user->getId(),
+                        $user->getId(),
                         $this->container->getSubscriptionMaxMembers(),
                         array(ilParticipants::getDefaultMemberRole($this->container->getRefId()))
                     );
+
+                    if (ilUtil::hasActivePlugin('Services', 'UIComponent', 'uihk', 'CourseBooking')) {
+                        if ($by_list === null) {
+                            //ilBookingProcessesUtils::bookCourseAsUser($user, $this->getContainer());
+                            ilBookingProcessesUtils::LearnerRequestsDirectMembershipCourse(
+                                $user->getId(),
+                                $this->getContainer()->getRefId()
+                            );
+                            $directMembershipProcessTriggered = true;
+                        } else {
+                            $actor = $DIC->user();
+                            ilBookingProcessesUtils::SuperiorBooksDirectCourse(
+                                $user->getId(),
+                                $this->getContainer()->getRefId(),
+                                $actor->getId()
+                            );
+                        }
+                    }
+                    // seminar-patch: end
                     if (!$success) {
                         $this->tpl->setOnScreenMessage('failure', $this->lng->txt('crs_subscription_failed_limit'));
+                        // seminar-patch: end
+                        if (ilUtil::hasActivePlugin('Services', 'UIComponent', 'uihk', 'CourseBooking')) {
+                            if ($has_list) {
+                                $this->tpl->setOnScreenMessage(
+                                    'success',
+                                    $this->lng->txt('crs_subscription_failed_limit'),
+                                    true
+                                );
+                                $this->ctrl->setParameterByClass(
+                                    ilCourseBookingUIHookGUI::class,
+                                    'ref_id',
+                                    $this->container->getRefId()
+                                );
+                                $this->ctrl->redirectByClass(
+                                    [ilUIPluginRouterGUI::class, ilCourseBookingUIHookGUI::class],
+                                    'EmployeeBookings'
+                                );
+                            }
+                        }
+                        // seminar-patch: end
                         $this->show();
                         return;
                     }
                 }
 
-                $this->participants->add($this->user->getId(), ilParticipants::IL_CRS_MEMBER);
-                $this->participants->sendNotification(ilCourseMembershipMailNotification::TYPE_NOTIFICATION_ADMINS, $this->user->getId());
-                $this->participants->sendNotification(ilCourseMembershipMailNotification::TYPE_SUBSCRIBE_MEMBER, $this->user->getId());
+                $this->participants->add($user->getId(), ilParticipants::IL_CRS_MEMBER);
+                // seminar-patch: end
+                if (ilUtil::hasActivePlugin('Services', 'UIComponent', 'uihk', 'CourseBooking')) {
+                    if ($by_list === null) {
+                        //ilBookingProcessesUtils::bookCourseAsUser( $ilUser, $this->getContainer() );
+                        if (false === $directMembershipProcessTriggered) {
+                            ilBookingProcessesUtils::LearnerRequestsDirectMembershipCourse(
+                                $user->getId(),
+                                $this->getContainer()->getRefId()
+                            );
+                        }
+                    } else {
+                        //ilBookingProcessesUtils::bookEmployeeAsSuperior($user->getId(), $this->getContainer()->getRefId());
+                        // TODO: SuperiorBooksDirectMembershipCourse
+                        //ilBookingProcessesUtils::SbookEmployeeAsSuperior($user->getId(), $this->getContainer()->getRefId());
+                    }
+                } else {
+                    $this->participants->sendNotification(
+                        ilCourseMembershipMailNotification::TYPE_NOTIFICATION_ADMINS,
+                        $user->getId()
+                    );
+                    $this->participants->sendNotification(
+                        ilCourseMembershipMailNotification::TYPE_SUBSCRIBE_MEMBER,
+                        $user->getId()
+                    );
+                }
 
-                ilForumNotification::checkForumsExistsInsert($this->container->getRefId(), $this->user->getId());
+                ilForumNotification::checkForumsExistsInsert($this->container->getRefId(), $user->getId());
 
                 if ($this->container->getType() == "crs") {
-                    $this->container->checkLPStatusSync($this->user->getId());
+                    $this->container->checkLPStatusSync($user->getId());
                 }
+                // seminar-patch: end
                 $pending_goto = ilSession::get('pending_goto');
                 if (!$pending_goto) {
                     $this->tpl->setOnScreenMessage('success', $this->lng->txt("crs_subscription_successful"), true);
+                    // seminar-patch: begin
+                    if (ilUtil::hasActivePlugin('Services', 'UIComponent', 'uihk', 'CourseBooking')) {
+                        if ($has_list) {
+                            $this->ctrl->setParameterByClass(
+                                ilCourseBookingUIHookGUI::class,
+                                'ref_id',
+                                $this->container->getRefId()
+                            );
+                            $this->ctrl->redirectByClass(
+                                [ilUIPluginRouterGUI::class, ilCourseBookingUIHookGUI::class],
+                                'EmployeeBookings'
+                            );
+                        }
+                    }
+                    // seminar-patch: end
                     $this->ctrl->returnToParent($this);
                 } else {
                     $tgt = $pending_goto;
@@ -450,7 +719,9 @@ class ilCourseRegistrationGUI extends ilRegistrationGUI
         return $this->waiting_list;
     }
 
-    protected function isWaitingListActive(): bool
+    // seminar-patch: begin
+    protected function isWaitingListActive(bool $out_of_self_subscription = true): bool
+    // seminar-patch: end
     {
         static $active = null;
 
@@ -463,8 +734,50 @@ class ilCourseRegistrationGUI extends ilRegistrationGUI
         if (!$this->container->getSubscriptionMaxMembers()) {
             return $active = false;
         }
-
+        // seminar-patch: begin
+        if (ilUtil::hasActivePlugin('Services', 'UIComponent', 'uihk', 'CourseBooking') &&
+            $out_of_self_subscription && $this->container->enabledWaitingList() && (
+                $this->container->getSubscriptionType() === ilCourseConstants::IL_CRS_SUBSCRIPTION_CONFIRMATION ||
+                $this->container->getSubscriptionType() === ilCourseConstants::IL_CRS_SUBSCRIPTION_WORKFLOW
+            )) {
+            return $active = false;
+        }
+        // seminar-patch: end
         $free = max(0, $this->container->getSubscriptionMaxMembers() - $this->participants->getCountMembers());
         return $active = (!$free || $this->getWaitingList()->getCountUsers());
     }
+    // seminar-patch: begin
+    protected function updateSubscriptionRequest(): void
+    {
+        if ($this->container->getSubscriptionType() === ilCourseConstants::IL_CRS_SUBSCRIPTION_WORKFLOW &&
+            ilUtil::hasActivePlugin('Services', 'UIComponent', 'uihk', 'CourseBooking')) {
+            $this->initForm();
+            if (!$this->validateAgreement()) {
+                $this->form->setValuesByPost();
+                $this->tpl->setOnScreenMessage('failure', $this->lng->txt('crs_agreement_required'));
+                $this->show();
+                return;
+            }
+            if (!$this->validateCustomFields()) {
+                $this->form->setValuesByPost();
+                $this->tpl->setOnScreenMessage('failure', $this->lng->txt('fill_out_all_required_fields'));
+                $this->show();
+                return;
+            }
+        }
+
+        parent::updateSubscriptionRequest();
+    }
+
+    protected function cancelSubscriptionRequest(): void
+    {
+        if (ilUtil::hasActivePlugin('Services', 'UIComponent', 'uihk', 'CourseBooking')) {
+            ilBookingProcessesUtils::LearnerRetractsConfirmationCourseRequest(
+                $this->user->getId(),
+                $this->container->getRefId()
+            );
+            parent::cancelSubscriptionRequest();
+        }
+    }
+    // seminar-patch: end
 }

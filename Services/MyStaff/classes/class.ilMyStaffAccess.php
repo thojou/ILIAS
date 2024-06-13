@@ -56,6 +56,12 @@ class ilMyStaffAccess extends ilObjectAccess
         if (self::$instance === null) {
             self::$instance = new self();
 
+            // databay-patch: begin mystaff
+            if (!self::isMyStaffActive()) {
+                return self::$instance;
+            }
+            // databay-patch: end mystaff
+
             self::$instance->dropTempTable(self::TMP_DEFAULT_TABLE_NAME_PREFIX_IL_OBJ_SPEC_PERMISSIONS . "_" . self::ACCESS_ENROLMENTS_ORG_UNIT_OPERATION . "_"
                 . self::COURSE_CONTEXT);
             self::$instance->dropTempTable(self::TMP_DEFAULT_TABLE_NAME_PREFIX_IL_OBJ_DEFAULT_PERMISSIONS . "_" . self::ACCESS_ENROLMENTS_ORG_UNIT_OPERATION
@@ -74,6 +80,14 @@ class ilMyStaffAccess extends ilObjectAccess
     public function __construct()
     {
     }
+
+    // databay-patch: begin mystaff
+    public static function isMyStaffActive(): bool
+    {
+        global $DIC;
+        return (bool) $DIC->settings()->get("enable_my_staff");
+    }
+    // databay-patch: end mystaff
 
     public function hasCurrentUserAccessToMyStaff(): bool
     {

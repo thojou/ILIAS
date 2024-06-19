@@ -25,6 +25,7 @@ use ILIAS\UI\Component\Modal\Modal;
 use ILIAS\UI\Component\Card\RepositoryObject;
 use ILIAS\UI\Component\Item\Item;
 use ILIAS\UI\Component\Image\Image;
+use ILIAS\UI\Implementation\Component\SignalGenerator;
 use ILIAS\Notes\Note;
 use ILIAS\HTTP\Services as HTTPServices;
 use ILIAS\Object\ilObjectDIC;
@@ -3267,32 +3268,26 @@ class ilObjectListGUI
             $this->modifySAHSlaunch($def_cmd_link, $def_cmd_frame);
 
         $image = $this->getTileImage();
+
+
+
         if ($def_cmd_link != '') {    // #24256
             if ($def_cmd_frame !== '' && ($modified_link === $def_cmd_link)) {
-                $image = $image->withAdditionalOnLoadCode(function ($id) use (
-                    $def_cmd_frame,
-                    $def_cmd_link
-                ): string {
-                    return
-                        '$("#' . $id . '").click(function(e) { window.open("' . str_replace(
+                $signal = (new SignalGenerator())->create();
+                $this->main_tpl->addOnLoadCode(
+                    "$(document).on('{$signal->getId()}', function(event, signalData) {"
+                        . ' window.open("' . str_replace(
                             '&amp;',
                             '&',
                             $def_cmd_link
-                        ) . '", "' . $def_cmd_frame . '");});';
-                });
+                        ) . '", "' . $def_cmd_frame . '");'
+                    . '});'
+                );
+
+                $image = $image->withAction($signal);
 
                 $button =
-                    $ui->factory()->button()->shy($title, "")->withAdditionalOnLoadCode(function ($id) use (
-                        $def_cmd_frame,
-                        $def_cmd_link
-                    ): string {
-                        return
-                            '$("#' . $id . '").click(function(e) { window.open("' . str_replace(
-                                '&amp;',
-                                '&',
-                                $def_cmd_link
-                            ) . '", "' . $def_cmd_frame . '");});';
-                    });
+                    $ui->factory()->button()->shy($title, '')->appendOnClick($signal);
                 $title = $ui->renderer()->render($button);
             } else {
                 $image = $image->withAction($modified_link);
@@ -3317,6 +3312,21 @@ class ilObjectListGUI
             ->icon()
             ->standard($type, $this->lng->txt('obj_' . $type))
         ;
+
+
+
+        if ($this->obj_definition->isActivePluginType($type)) {
+            $class_name = 'il' . $this->obj_definition->getClassName($type) . 'Plugin';
+            if ($class_name !== 'ilPlugin'
+            && method_exists($class_name, '_getIcon')) {
+                $pl = ilObjectPlugin::getPluginObjectByType($type);
+                $icon = $this->ui
+                    ->factory()
+                    ->symbol()
+                    ->icon()
+                    ->custom(call_user_func([$class_name, '_getIcon'], $type, 'small', $obj_id), $pl->txt('obj_' . $type));
+            }
+        }
 
         // card title action
         $card_title_action = '';

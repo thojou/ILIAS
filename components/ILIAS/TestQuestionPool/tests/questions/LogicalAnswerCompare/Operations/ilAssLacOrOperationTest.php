@@ -16,30 +16,22 @@
  *
  *********************************************************************/
 
-/**
-* Unit tests
-*
-* @author Matheus Zych <mzych@databay.de>
-*
-* @ingroup components\ILIASTestQuestionPool
-*
-* This test was automatically generated.
-*/
-class ilAssLacAndOperationTest extends assBaseTestCase
+declare(strict_types=1);
+
+class ilAssLacOrOperationTest extends ilAssLacOperationTestCase
 {
-    protected $backupGlobals = false;
-
-    private ilAssLacOROperation $object;
-
-    protected function setUp(): void
+    protected function getOperationClass(): string
     {
-        parent::setUp();
-
-        $this->object = new ilAssLacOROperation();
+        return ilAssLacOrOperation::class;
     }
 
-    public function testConstruct(): void
+    protected function getExpectedPattern(): string
     {
-        $this->assertInstanceOf(ilAssLacOROperation::class, $this->object);
+        return "|";
+    }
+
+    protected function getExpectedDescription(): string
+    {
+        return "oder ";
     }
 }

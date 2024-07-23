@@ -19,6 +19,12 @@ class ilAssLacQuestionProviderTest extends assBaseTestCase
         TestQuestionMockAdapter::setMockObject($this->questionMock);
     }
 
+    protected function tearDown(): void
+    {
+        TestQuestionMockAdapter::tearDown();
+        TestQuestionMockAdapterFeedback::tearDown();
+    }
+
     public function test_setQuestion()
     {
         $question_condition_mock = $this->createMock(TestQuestionMockAdapter::class);

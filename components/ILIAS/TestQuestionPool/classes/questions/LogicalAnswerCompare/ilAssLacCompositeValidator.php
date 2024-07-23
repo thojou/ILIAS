@@ -87,8 +87,8 @@ class ilAssLacCompositeValidator
             $this->checkAnswerExpressionExist($question->getExpressionTypes(), $answer_expression, $question_index);
             $this->checkOperatorExistForExpression($question->getOperators($answer_expression::$identifier), $answer_expression, $composite::$pattern);
 
-            if ($answer_expression instanceof ilAssLacOrderingResultExpression &&
-                ($question instanceof assOrderingHorizontal || $question instanceof assOrderingQuestion)
+            if ($answer_expression instanceof ilAssLacOrderingResultExpression/* &&
+                ($question instanceof assOrderingHorizontal || $question instanceof assOrderingQuestion)*/
             ) {
                 foreach ($answer_expression->getOrdering() as $order) {
                     $count = 0;

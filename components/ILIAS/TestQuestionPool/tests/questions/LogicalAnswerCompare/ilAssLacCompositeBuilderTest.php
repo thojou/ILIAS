@@ -28,6 +28,6 @@ class ilAssLacCompositeBuilderTest extends TestCase
     {
         $this->expectException(ilAssLacCompositeBuilderException::class);
 
-        $this->builder->create([]);
+        $this->builder->create(['type' => 'unknown']);
     }
 }

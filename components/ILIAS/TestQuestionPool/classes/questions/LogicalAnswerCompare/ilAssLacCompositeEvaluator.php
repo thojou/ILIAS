@@ -158,7 +158,7 @@ class ilAssLacCompositeEvaluator
             if (
                 $question instanceof assFormulaQuestion &&
                 $rightNode instanceof ilAssLacPercentageResultExpression &&
-                $this->isInstanceOfAnswerIndexProvidingExpression($composite->nodes[0])
+                $this->isInstanceOfAnswerIndexProvidingExpression($composite) // @todo: Make mantis issue cause fixed a bug
             ) {
                 // @todo for Thomas J.: Move to interface / implement in concrete class (req. for future releases)
                 $result = $solutions->getSolutionForKey($index);

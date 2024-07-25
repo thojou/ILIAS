@@ -2,25 +2,24 @@
 
 class ilAssLacAnswerOfQuestionExpressionTest extends ilAssLacExpressionTestCase
 {
+    /**
+     * @dataProvider provideParseValueData
+     */
+    public function test_parseValue(string $input_value, string $expected_value, string $expected_description): void
+    {
+        parent::test_parseValue($input_value, $expected_value, $expected_description);
+
+        $this->assertIsInt($this->expression->getQuestionIndex());
+    }
+
     public function test_QuestionExpressionInterfaceImplemented(): void
     {
         $this->assertInstanceOf(ilAssLacQuestionExpressionInterface::class, $this->expression);
-        $this->assertEquals(5, $this->expression->getQuestionIndex());
     }
 
     protected function getExpressionClass(): string
     {
         return ilAssLacAnswerOfQuestionExpression::class;
-    }
-
-    protected function getExpectedValue(): string
-    {
-        return "Q5";
-    }
-
-    protected function getExpectedDescription(): string
-    {
-        return "Frage 5 ";
     }
 
     protected function getExpectedStaticPattern(): string
@@ -33,8 +32,11 @@ class ilAssLacAnswerOfQuestionExpressionTest extends ilAssLacExpressionTestCase
         return "Qn";
     }
 
-    protected function getInputValueFixture(): string
+    public static function provideParseValueData(): array
     {
-        return "Q5";
+        return [
+            ['Q5', 'Q5', 'Frage 5 '],
+            ['Q3', 'Q3', 'Frage 3 ']
+        ];
     }
 }

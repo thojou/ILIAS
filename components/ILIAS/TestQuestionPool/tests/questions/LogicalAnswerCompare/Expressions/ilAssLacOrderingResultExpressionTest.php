@@ -2,13 +2,17 @@
 
 namespace questions\LogicalAnswerCompare\Expressions;
 
+use ilAssLacAbstractExpression;
 use ilAssLacExpressionTestCase;
 use ilAssLacNumericResultExpression;
 use ilAssLacOrderingResultExpression;
 use ilAssLacSolutionExpressionInterface;
+use ilAssLacSolutionExpressionTestCaseTrait;
 
 class ilAssLacOrderingResultExpressionTest extends ilAssLacExpressionTestCase
 {
+    use ilAssLacSolutionExpressionTestCaseTrait;
+
     public function test_QuestionSolutionExpressionInterfaceImplemented(): void
     {
         $this->assertInstanceOf(ilAssLacSolutionExpressionInterface::class, $this->expression);
@@ -17,16 +21,6 @@ class ilAssLacOrderingResultExpressionTest extends ilAssLacExpressionTestCase
     protected function getExpressionClass(): string
     {
         return ilAssLacOrderingResultExpression::class;
-    }
-
-    protected function getExpectedValue(): string
-    {
-        return '$3,2,4,1,5$';
-    }
-
-    protected function getExpectedDescription(): string
-    {
-        return "3,2,4,1,5 beantwortet "; // TODO: Implement getExpectedDescription() method.
     }
 
     protected function getExpectedStaticPattern(): string
@@ -39,9 +33,46 @@ class ilAssLacOrderingResultExpressionTest extends ilAssLacExpressionTestCase
         return '$n,m,o,p$';
     }
 
-    protected function getInputValueFixture(): string
+    protected function createExpression(): ilAssLacAbstractExpression
     {
-        return '$3,2,4,1,5$';
+        $expression = parent::createExpression();
+        $expression->parseValue('$3,2,4,1,5$');
+
+        return $expression;
     }
 
+    public static function provideParseValueData(): array
+    {
+        return [
+            ['$3,2,4,1,5$', '$3,2,4,1,5$', '3,2,4,1,5 beantwortet '],
+            ['$1,3,2$', '$1,3,2$', '1,3,2 beantwortet ']
+        ];
+    }
+
+    public static function provideCheckResultData(): array
+    {
+        return [
+            [
+                "comparator" => "=",
+                "expected" => true,
+                'index' => null,
+                "has_solution" => false,
+                'solution' => ['3', '2', '4', '1', '5']
+            ],
+            [
+                "comparator" => "<>",
+                "expected" => true,
+                'index' => null,
+                'has_solution' => true,
+                'solution' => ['1', '3', '2']
+            ],
+            [
+                "comparator" => "==",
+                "expected" => false,
+                'index' => null,
+                'has_solution' => true,
+                'solution' => ['3', '2', '4', '1', '5']
+            ],
+        ];
+    }
 }

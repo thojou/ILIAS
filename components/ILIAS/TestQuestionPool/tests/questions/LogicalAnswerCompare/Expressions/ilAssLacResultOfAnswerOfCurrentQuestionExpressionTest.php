@@ -23,16 +23,6 @@ class ilAssLacResultOfAnswerOfCurrentQuestionExpressionTest extends ilAssLacExpr
         return ilAssLacResultOfAnswerOfCurrentQuestionExpression::class;
     }
 
-    protected function getExpectedValue(): string
-    {
-        return 'R[3]';
-    }
-
-    protected function getExpectedDescription(): string
-    {
-        return "Aktuelle Frage mit Anwort 3 beantwortet "; // TODO: Implement getExpectedDescription() method.
-    }
-
     protected function getExpectedStaticPattern(): string
     {
         return '/R\\[[0-9]+\\]/';
@@ -43,8 +33,11 @@ class ilAssLacResultOfAnswerOfCurrentQuestionExpressionTest extends ilAssLacExpr
         return 'R[m]';
     }
 
-    protected function getInputValueFixture(): string
+    public static function provideParseValueData(): array
     {
-        return 'R[3]';
+        return [
+            ['R[3]', 'R[3]', 'Aktuelle Frage mit Anwort 3 beantwortet '],
+            ['R[1]', 'R[1]', 'Aktuelle Frage mit Anwort 1 beantwortet ']
+        ];
     }
 }

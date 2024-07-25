@@ -15,16 +15,6 @@ class ilAssLacAnswerOfCurrentQuestionExpressionTest extends ilAssLacExpressionTe
         return ilAssLacAnswerOfCurrentQuestionExpression::class;
     }
 
-    protected function getExpectedValue(): string
-    {
-        return "R";
-    }
-
-    protected function getExpectedDescription(): string
-    {
-        return "Aktuelle Frage";
-    }
-
     protected function getExpectedStaticPattern(): string
     {
         return '/(R)(?=\=|<|>|\s|$)/';
@@ -35,8 +25,10 @@ class ilAssLacAnswerOfCurrentQuestionExpressionTest extends ilAssLacExpressionTe
         return "R";
     }
 
-    protected function getInputValueFixture(): string
+    public static function provideParseValueData(): array
     {
-        return "R";
+        return [
+            ['R', 'R', 'Aktuelle Frage']
+        ];
     }
 }

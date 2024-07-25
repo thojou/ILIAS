@@ -16,22 +16,21 @@ class ilAssLacResultOfAnswerOfQuestionExpressionTest extends ilAssLacExpressionT
     public function test_QuestionExpressionInterfaceImplemented(): void
     {
         $this->assertInstanceOf(ilAssLacQuestionExpressionInterface::class, $this->expression);
-        $this->assertEquals(1, $this->expression->getQuestionIndex());
+    }
+
+    /**
+     * @dataProvider provideParseValueData
+     */
+    public function test_parseValue(string $input_value, string $expected_value, string $expected_description): void
+    {
+        parent::test_parseValue($input_value, $expected_value, $expected_description);
+
+        $this->assertIsInt($this->expression->getQuestionIndex());
     }
 
     protected function getExpressionClass(): string
     {
         return ilAssLacResultOfAnswerOfQuestionExpression::class;
-    }
-
-    protected function getExpectedValue(): string
-    {
-        return 'Q1[3]';
-    }
-
-    protected function getExpectedDescription(): string
-    {
-        return "Frage 1 mit Anwort 3 beantwortet "; // TODO: Implement getExpectedDescription() method.
     }
 
     protected function getExpectedStaticPattern(): string
@@ -44,8 +43,11 @@ class ilAssLacResultOfAnswerOfQuestionExpressionTest extends ilAssLacExpressionT
         return 'Qn[m]';
     }
 
-    protected function getInputValueFixture(): string
+    public static function provideParseValueData(): array
     {
-        return 'Q1[3]';
+        return [
+            ['Q1[3]', 'Q1[3]', 'Frage 1 mit Anwort 3 beantwortet '],
+            ['Q2[1]', 'Q2[1]', 'Frage 2 mit Anwort 1 beantwortet ']
+        ];
     }
 }

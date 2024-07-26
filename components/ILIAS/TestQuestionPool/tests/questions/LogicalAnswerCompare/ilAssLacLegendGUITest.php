@@ -4,7 +4,6 @@ use ILIAS\UI\Component\Modal\Modal;
 
 class ilAssLacLegendGUITest extends assBaseTestCase
 {
-
     private ilGlobalTemplateInterface $global_page_template;
     private \ILIAS\UI\Factory $ui_factory;
     private ilLanguage $lng;

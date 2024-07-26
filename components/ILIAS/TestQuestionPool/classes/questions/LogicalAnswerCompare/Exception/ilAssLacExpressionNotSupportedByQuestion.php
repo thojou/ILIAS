@@ -33,18 +33,18 @@ class ilAssLacExpressionNotSupportedByQuestion extends ilAssLacException impleme
     protected $expression;
 
     /**
-     * @var int
+     * @var ?int
      */
     protected $question_index;
 
     /**
      * @param string $expression
-     * @param int    $question_index
+     * @param ?int    $question_index
      */
     public function __construct($expression, $question_index)
     {
         $this->expression = $expression;
-        $this->question_index = (int) $question_index;
+        $this->question_index = is_string($question_index) ? (int) $question_index : $question_index;
 
         if ($this->getQuestionIndex() === null) {
             $msg = sprintf(

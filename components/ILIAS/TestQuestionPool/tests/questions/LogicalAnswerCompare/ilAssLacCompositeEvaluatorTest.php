@@ -6,7 +6,6 @@ use PHPUnit\Framework\MockObject\MockObject;
 
 class ilAssLacCompositeEvaluatorTest extends assBaseTestCase
 {
-
     private ilAssLacCompositeEvaluator $evaluator;
     private ilAssLacQuestionProvider&MockObject $object_loader_mock;
 

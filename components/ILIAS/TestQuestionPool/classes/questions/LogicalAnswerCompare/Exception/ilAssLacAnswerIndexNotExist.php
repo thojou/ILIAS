@@ -28,18 +28,18 @@
 class ilAssLacAnswerIndexNotExist extends ilAssLacException implements ilAssLacFormAlertProvider
 {
     /**
-     * @var int
+     * @var ?int
      */
     protected $question_index;
 
     /**
-     * @var int
+     * @var ?int
      */
     protected $answer_index;
 
     /**
-     * @param int $question_index
-     * @param int $answer_index
+     * @param ?int $question_index
+     * @param ?int $answer_index
      */
     public function __construct($question_index, $answer_index)
     {
@@ -65,7 +65,7 @@ class ilAssLacAnswerIndexNotExist extends ilAssLacException implements ilAssLacF
     /**
      * @return int
      */
-    public function getQuestionIndex(): int
+    public function getQuestionIndex(): ?int
     {
         return $this->question_index;
     }
@@ -73,7 +73,7 @@ class ilAssLacAnswerIndexNotExist extends ilAssLacException implements ilAssLacF
     /**
      * @return int
      */
-    public function getAnswerIndex(): int
+    public function getAnswerIndex(): ?int
     {
         return $this->answer_index;
     }

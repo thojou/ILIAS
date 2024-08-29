@@ -95,7 +95,7 @@ when no template can be determined.
 Per Skin, one HTML template can be defined and has to be
 stored in the following location:
 
-    ./Customizing/global/skin/<NAME>/Services/Mail/tpl.html_mail_template.html.
+    ./Customizing/global/skin/<SKIN-NAME>/<STYLE-NAME>/Services/Mail/tpl.html_mail_template.html.
 
 The HTML frame template concept consists of the HTML
 markup file itself and some optional attachments.
@@ -324,15 +324,17 @@ This can be done as described in the following examples:
 ```php
 $attachment = new \ilFileDataMail($senderUserId);
 
-$attachment->storeAsAttachment(
-    'appointment.ics', $someIcalString
+$attachment_filename = $attachment->storeAsAttachment(
+    'appointment.ics',
+    $some_ical_string
 );
 
 $attachment->copyAttachmentFile(
-    '/temp/hello.jpg', 'HelloWorld.jpg'
+    '/temp/hello.jpg',
+    'HelloWorld.jpg'
 );
 
-$mail = new \ilMail($senderUserId);
+$mail = new \ilMail($sender_usr_id);
 $mail->enqueue(
     $to,
     $cc,
@@ -340,14 +342,14 @@ $mail->enqueue(
     $subject,
     $message,
     [
-        'appointment.ics',
+        $attachment_filename,
         'HelloWorld.jpg'
-    ],
-    array("system")
+    ]
 );
 
-// or $attachment->unlinkFiles(['/temp/hello.jpg']);
-$attachment->unlinkFile('/temp/hello.jpg');
+// or $attachment->unlinkFiles(['HelloWorld.jpg', $attachment_filename]);
+$attachment->unlinkFile('HelloWorld.jpg');
+$attachment->unlinkFile($attachment_filename);
 ```
 
 As outlined above attachments have to be removed

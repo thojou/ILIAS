@@ -65,6 +65,13 @@ class ilObjectCoreProperties
         return $this->type;
     }
 
+    public function withType(?string $type): self
+    {
+        $clone = clone $this;
+        $clone->type = $type;
+        return $clone;
+    }
+
     public function getOwner(): ?int
     {
         return $this->owner;
@@ -87,16 +94,16 @@ class ilObjectCoreProperties
         return $this->update_date;
     }
 
-    public function withLastUpdateDate(DateTimeImmutable $update_date): self
-    {
-        $clone = clone $this;
-        $clone->update_date = $update_date;
-        return $clone;
-    }
-
     public function getImportId(): string
     {
         return $this->import_id ?? '';
+    }
+
+    public function withImportId(string $import_id): self
+    {
+        $clone = clone $this;
+        $clone->import_id = $import_id;
+        return $clone;
     }
 
     public function getPropertyTitleAndDescription(): ilObjectPropertyTitleAndDescription

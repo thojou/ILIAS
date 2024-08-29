@@ -203,6 +203,7 @@ class ilUserUtil
 
     public static function getStartingPointAsUrl(): string
     {
+        /** @var ILIAS\DI\Container $DIC */
         global $DIC;
         // seminar-patch: begin
         $authMode = $DIC->user()->getAuthMode() ?? '';
@@ -218,10 +219,14 @@ class ilUserUtil
         $starting_point_repository = new ilUserStartingPointRepository(
             $DIC['ilUser'],
             $DIC['ilDB'],
+            $DIC['tpl'],
+            $DIC->logger(),
             $DIC['tree'],
             $DIC['rbacreview'],
+            $DIC['rbacsystem'],
             $DIC['ilSetting']
         );
-        return $starting_point_repository->getStartingPointAsUrl();
+
+        return $starting_point_repository->getValidAndAccessibleStartingPointAsUrl();
     }
 }

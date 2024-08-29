@@ -20,10 +20,13 @@ declare(strict_types=1);
 
 use ILIAS\UI\Factory as UIFactory;
 use ILIAS\UI\Renderer as UIRenderer;
+use ILIAS\Refinery\Factory as Refinery;
 use ILIAS\DI\LoggingServices;
 use ILIAS\Data\Factory as DataFactory;
 use ILIAS\Skill\Service\SkillService;
 use ILIAS\Test\InternalRequestService;
+use ILIAS\TestQuestionPool\QuestionInfoService;
+use ILIAS\HTTP\GlobalHttpState;
 
 /**
  * Class ilTestResultsGUI
@@ -57,6 +60,7 @@ class ilTestResultsGUI
         private ilCtrl $ctrl,
         private ilAccess $access,
         private ilDBInterface $db,
+        private Refinery $refinery,
         private ilObjUser $user,
         private ilLanguage $lng,
         private LoggingServices $logging_services,
@@ -68,7 +72,8 @@ class ilTestResultsGUI
         private UIRenderer $ui_renderer,
         private SkillService $skills_service,
         private InternalRequestService $testrequest,
-        private \ILIAS\TestQuestionPool\QuestionInfoService $questioninfo
+        private QuestionInfoService $questioninfo,
+        private GlobalHttpState $http
     ) {
     }
 
@@ -168,7 +173,9 @@ class ilTestResultsGUI
                     $this->ui_factory,
                     $this->ui_renderer,
                     new ilTestParticipantAccessFilterFactory($this->access),
-                    $this->testrequest
+                    $this->testrequest,
+                    $this->http,
+                    $this->refinery
                 );
                 $gui->setTestObj($this->getTestObj());
                 $gui->setQuestionSetConfig($this->getQuestionSetConfig());
@@ -241,7 +248,7 @@ class ilTestResultsGUI
             case 'iltestskillevaluationgui':
                 $this->getTestTabs()->activateSubTab(ilTestTabsManager::SUBTAB_ID_SKILL_RESULTS);
 
-                $questionList = new ilAssQuestionList($this->db, $this->lng, $this->component_repository);
+                $questionList = new ilAssQuestionList($this->db, $this->lng, $this->refinery, $this->component_repository);
                 $questionList->setParentObjId($this->getTestObj()->getId());
                 $questionList->setQuestionInstanceTypeFilter(ilAssQuestionList::QUESTION_INSTANCE_TYPE_DUPLICATES);
                 $questionList->load();

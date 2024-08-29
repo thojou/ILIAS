@@ -1,8 +1,9 @@
--- MariaDB dump 10.19  Distrib 10.6.12-MariaDB, for debian-linux-gnu (x86_64)
+/*!999999\- enable the sandbox mode */ 
+-- MariaDB dump 10.19  Distrib 10.6.18-MariaDB, for debian-linux-gnu (x86_64)
 --
 -- Host: localhost    Database: ilias_release
 -- ------------------------------------------------------
--- Server version	10.6.12-MariaDB-0ubuntu0.22.04.1
+-- Server version	10.6.18-MariaDB-0ubuntu0.22.04.1
 
 --
 -- Table structure for table `acc_access_key`
@@ -489,7 +490,7 @@ CREATE TABLE `adv_md_values_extlink` (
   `sub_type` varchar(10) NOT NULL DEFAULT '-',
   `sub_id` int(11) NOT NULL DEFAULT 0,
   `field_id` int(11) NOT NULL DEFAULT 0,
-  `value` varchar(500) DEFAULT NULL,
+  `value` varchar(2000) DEFAULT NULL,
   `title` varchar(500) DEFAULT NULL,
   `disabled` tinyint(4) NOT NULL DEFAULT 0,
   PRIMARY KEY (`obj_id`,`sub_type`,`sub_id`,`field_id`)
@@ -2317,7 +2318,8 @@ CREATE TABLE `cmix_del_user` (
   `usr_id` int(11) NOT NULL,
   `added` datetime NOT NULL,
   `updated` datetime DEFAULT NULL,
-  PRIMARY KEY (`usr_id`)
+  `obj_id` int(11) NOT NULL,
+  PRIMARY KEY (`usr_id`,`obj_id`)
 ) ;
 
 --
@@ -2896,6 +2898,8 @@ INSERT INTO `copg_pobj_def` VALUES ('frm','ilForumPage','classes/CoPage','Module
 INSERT INTO `copg_pobj_def` VALUES ('impr','ilImprint','classes','Services/Imprint');
 INSERT INTO `copg_pobj_def` VALUES ('lm','ilLMPage','classes','Modules/LearningModule');
 INSERT INTO `copg_pobj_def` VALUES ('lobj','ilLOPage','classes/Objectives','Modules/Course');
+INSERT INTO `copg_pobj_def` VALUES ('lsoe','ilLSOExtroPage','classes/PageEditor','Modules/LearningSequence');
+INSERT INTO `copg_pobj_def` VALUES ('lsoi','ilLSOIntroPage','classes/PageEditor','Modules/LearningSequence');
 INSERT INTO `copg_pobj_def` VALUES ('mep','ilMediaPoolPage','classes','Modules/MediaPool');
 INSERT INTO `copg_pobj_def` VALUES ('prtf','ilPortfolioPage','Page','Modules/Portfolio');
 INSERT INTO `copg_pobj_def` VALUES ('prtt','ilPortfolioTemplatePage','Template','Modules/Portfolio');
@@ -5238,6 +5242,22 @@ CREATE TABLE `exc_members` (
 
 
 --
+-- Table structure for table `exc_multi_feedback`
+--
+
+CREATE TABLE `exc_multi_feedback` (
+  `tutor_id` int(11) NOT NULL,
+  `ass_id` int(11) NOT NULL,
+  `zip_rid` varchar(64) DEFAULT NULL,
+  PRIMARY KEY (`tutor_id`,`ass_id`)
+) ;
+
+--
+-- Dumping data for table `exc_multi_feedback`
+--
+
+
+--
 -- Table structure for table `exc_returned`
 --
 
@@ -7009,6 +7029,7 @@ INSERT INTO `il_db_steps` VALUES ('ilCmiXapiDatabaseUpdateSteps',13,'2023-12-12 
 INSERT INTO `il_db_steps` VALUES ('ilCmiXapiDatabaseUpdateSteps',14,'2023-12-12 16:39:39.593639','2023-12-12 16:39:39.599431');
 INSERT INTO `il_db_steps` VALUES ('ilCmiXapiDatabaseUpdateSteps',15,'2023-12-12 16:39:39.600090','2023-12-12 16:39:39.611849');
 INSERT INTO `il_db_steps` VALUES ('ilCmiXapiDatabaseUpdateSteps',16,'2023-12-12 16:39:39.612522','2023-12-12 16:39:39.624741');
+INSERT INTO `il_db_steps` VALUES ('ilCmiXapiDatabaseUpdateSteps',17,'2024-04-30 15:11:09.019261','2024-04-30 15:11:09.025313');
 INSERT INTO `il_db_steps` VALUES ('ilContentPageUpdateSteps',1,'2023-12-12 16:39:39.689885','2023-12-12 16:39:39.690424');
 INSERT INTO `il_db_steps` VALUES ('ilCourseObjectiveDBUpdateSteps',1,'2023-12-12 16:39:39.691358','2023-12-12 16:39:39.698495');
 INSERT INTO `il_db_steps` VALUES ('ilCourseObjectiveDBUpdateSteps',2,'2023-12-12 16:39:39.699161','2023-12-12 16:39:39.705726');
@@ -7026,6 +7047,11 @@ INSERT INTO `il_db_steps` VALUES ('ilDataCollectionDBUpdateSteps9',5,'2023-12-12
 INSERT INTO `il_db_steps` VALUES ('ilDataCollectionDBUpdateSteps9',6,'2023-12-12 16:39:39.772568','2023-12-12 16:39:39.773403');
 INSERT INTO `il_db_steps` VALUES ('ilDataCollectionDBUpdateSteps9',7,'2023-12-12 16:39:39.773989','2023-12-12 16:39:39.774820');
 INSERT INTO `il_db_steps` VALUES ('ilDataCollectionDBUpdateSteps9',8,'2023-12-12 16:39:39.775403','2023-12-12 16:39:39.781016');
+INSERT INTO `il_db_steps` VALUES ('ilDataCollectionDBUpdateSteps9',9,'2024-04-30 15:11:09.026028','2024-04-30 15:11:09.026500');
+INSERT INTO `il_db_steps` VALUES ('ilDataCollectionDBUpdateSteps9',10,'2024-06-18 14:04:51.007711','2024-06-18 14:04:51.020613');
+INSERT INTO `il_db_steps` VALUES ('ilDataCollectionDBUpdateSteps9',11,'2024-06-18 14:04:51.020875','2024-06-18 14:04:51.021343');
+INSERT INTO `il_db_steps` VALUES ('ilDataCollectionDBUpdateSteps9',12,'2024-07-30 14:37:06.779188','2024-07-30 14:37:06.779945');
+INSERT INTO `il_db_steps` VALUES ('ilDataCollectionDBUpdateSteps9',13,'2024-07-30 14:37:06.780220','2024-07-30 14:37:06.788495');
 INSERT INTO `il_db_steps` VALUES ('ilECSDBUpdateSteps',1,'2023-12-12 16:39:39.782084','2023-12-12 16:39:39.788234');
 INSERT INTO `il_db_steps` VALUES ('ilECSUpdateSteps8',1,'2023-12-12 16:39:41.504023','2023-12-12 16:39:41.515769');
 INSERT INTO `il_db_steps` VALUES ('ilECSUpdateSteps8',2,'2023-12-12 16:39:41.516395','2023-12-12 16:39:41.521923');
@@ -7065,6 +7091,7 @@ INSERT INTO `il_db_steps` VALUES ('ILIAS\\Administration\\Setup\\ilAdministratio
 INSERT INTO `il_db_steps` VALUES ('ILIAS\\AdvancedMetaData\\Setup\\DBUpdateSteps8',1,'2023-12-12 16:39:38.712839','2023-12-12 16:39:38.721799');
 INSERT INTO `il_db_steps` VALUES ('ILIAS\\AdvancedMetaData\\Setup\\DBUpdateSteps8',2,'2023-12-12 16:39:38.722433','2023-12-12 16:39:38.727867');
 INSERT INTO `il_db_steps` VALUES ('ILIAS\\AdvancedMetaData\\Setup\\DBUpdateSteps8',3,'2023-12-12 16:39:38.728492','2023-12-12 16:39:38.729626');
+INSERT INTO `il_db_steps` VALUES ('ILIAS\\AdvancedMetaData\\Setup\\DBUpdateSteps8',4,'2024-07-30 14:37:06.772061','2024-07-30 14:37:06.773923');
 INSERT INTO `il_db_steps` VALUES ('ILIAS\\Blog\\Setup\\BlogDBUpdateSteps',1,'2023-12-12 16:39:38.730712','2023-12-12 16:39:38.736204');
 INSERT INTO `il_db_steps` VALUES ('ILIAS\\Blog\\Setup\\BlogDBUpdateSteps',2,'2023-12-12 16:39:38.736861','2023-12-12 16:39:38.737915');
 INSERT INTO `il_db_steps` VALUES ('ILIAS\\BookingManager\\Setup\\ilBookingManagerDBUpdateSteps',1,'2023-12-12 16:39:38.738873','2023-12-12 16:39:38.746442');
@@ -7114,11 +7141,13 @@ INSERT INTO `il_db_steps` VALUES ('ILIAS\\Exercise\\Setup\\ilExerciseDBUpdateSte
 INSERT INTO `il_db_steps` VALUES ('ILIAS\\Exercise\\Setup\\ilExerciseDBUpdateSteps',14,'2023-12-12 16:39:39.892704','2023-12-12 16:39:39.898466');
 INSERT INTO `il_db_steps` VALUES ('ILIAS\\Exercise\\Setup\\ilExerciseDBUpdateSteps',15,'2023-12-12 16:39:39.899113','2023-12-12 16:39:39.911924');
 INSERT INTO `il_db_steps` VALUES ('ILIAS\\Exercise\\Setup\\ilExerciseDBUpdateSteps',16,'2023-12-12 16:39:39.912625','2023-12-12 16:39:39.913394');
+INSERT INTO `il_db_steps` VALUES ('ILIAS\\Exercise\\Setup\\ilExerciseDBUpdateSteps',17,'2024-04-30 15:11:09.027177','2024-04-30 15:11:09.030647');
 INSERT INTO `il_db_steps` VALUES ('ILIAS\\Help\\Setup\\ilHelpDBUpdateSteps',1,'2023-12-12 16:39:38.874568','2023-12-12 16:39:38.880049');
 INSERT INTO `il_db_steps` VALUES ('ILIAS\\Help\\Setup\\ilHelpDBUpdateSteps',2,'2023-12-12 16:39:38.880668','2023-12-12 16:39:38.886115');
 INSERT INTO `il_db_steps` VALUES ('ILIAS\\Help\\Setup\\ilHelpDBUpdateSteps',3,'2023-12-12 16:39:38.886720','2023-12-12 16:39:38.887276');
 INSERT INTO `il_db_steps` VALUES ('ILIAS\\ItemGroup\\Setup\\ilItemGroupDBUpdateSteps',1,'2023-12-12 16:39:38.894598','2023-12-12 16:39:38.900233');
 INSERT INTO `il_db_steps` VALUES ('ILIAS\\ItemGroup\\Setup\\ilItemGroupDBUpdateSteps',2,'2023-12-12 16:39:38.900874','2023-12-12 16:39:38.906340');
+INSERT INTO `il_db_steps` VALUES ('ILIAS\\LDAP\\Setup\\LDAPBindPasswordFieldMigration',1,'2024-08-27 13:48:37.202984','2024-08-27 13:48:37.207786');
 INSERT INTO `il_db_steps` VALUES ('ILIAS\\LearningModule\\Setup\\LearningModuleDBUpdateSteps',1,'2023-12-12 16:39:38.907450','2023-12-12 16:39:38.912966');
 INSERT INTO `il_db_steps` VALUES ('ILIAS\\LearningModule\\Setup\\LearningModuleDBUpdateSteps',2,'2023-12-12 16:39:38.913604','2023-12-12 16:39:38.919087');
 INSERT INTO `il_db_steps` VALUES ('ILIAS\\LegalDocuments\\Setup\\UpdateSteps',1,'2023-12-12 16:39:38.920097','2023-12-12 16:39:38.970055');
@@ -7132,6 +7161,8 @@ INSERT INTO `il_db_steps` VALUES ('ILIAS\\MediaCast\\Setup\\ilMediaCastDBUpdateS
 INSERT INTO `il_db_steps` VALUES ('ILIAS\\MediaCast\\Setup\\ilMediaCastDBUpdateSteps',4,'2023-12-12 16:39:39.001272','2023-12-12 16:39:39.004364');
 INSERT INTO `il_db_steps` VALUES ('ILIAS\\MediaObjects\\Setup\\ilMediaObjectsDBUpdateSteps',1,'2023-12-12 16:39:39.005516','2023-12-12 16:39:39.006631');
 INSERT INTO `il_db_steps` VALUES ('ILIAS\\MediaObjects\\Setup\\ilMediaObjectsDBUpdateSteps',2,'2024-01-31 14:38:25.390434','2024-01-31 14:38:25.391265');
+INSERT INTO `il_db_steps` VALUES ('ILIAS\\MediaObjects\\Setup\\ilMediaObjectsDBUpdateSteps',3,'2024-06-18 14:04:51.003089','2024-06-18 14:04:51.003444');
+INSERT INTO `il_db_steps` VALUES ('ILIAS\\MediaObjects\\Setup\\ilMediaObjectsDBUpdateSteps',4,'2024-06-18 14:04:51.003687','2024-06-18 14:04:51.005776');
 INSERT INTO `il_db_steps` VALUES ('ILIAS\\Notes\\Setup\\ilNotesDBUpdateSteps',1,'2023-12-12 16:39:39.007597','2023-12-12 16:39:39.013002');
 INSERT INTO `il_db_steps` VALUES ('ILIAS\\Object\\Setup\\ilObject9DBUpdateSteps',1,'2023-12-12 16:39:39.019667','2023-12-12 16:39:39.024275');
 INSERT INTO `il_db_steps` VALUES ('ILIAS\\Object\\Setup\\ilObject9DBUpdateSteps',2,'2023-12-12 16:39:39.024758','2023-12-12 16:39:39.092466');
@@ -7157,6 +7188,8 @@ INSERT INTO `il_db_steps` VALUES ('ILIAS\\Style\\Content\\Setup\\ilStyleDBUpdate
 INSERT INTO `il_db_steps` VALUES ('ILIAS\\Style\\Content\\Setup\\ilStyleDBUpdateSteps',17,'2024-01-31 14:38:25.396963','2024-01-31 14:38:25.397440');
 INSERT INTO `il_db_steps` VALUES ('ILIAS\\Style\\Content\\Setup\\ilStyleDBUpdateSteps',18,'2024-01-31 14:38:25.397913','2024-01-31 14:38:25.398366');
 INSERT INTO `il_db_steps` VALUES ('ILIAS\\Style\\Content\\Setup\\ilStyleDBUpdateSteps',19,'2024-01-31 14:38:25.398856','2024-01-31 14:38:25.399275');
+INSERT INTO `il_db_steps` VALUES ('ILIAS\\Style\\Content\\Setup\\ilStyleDBUpdateSteps',20,'2024-04-30 15:11:09.017679','2024-04-30 15:11:09.018014');
+INSERT INTO `il_db_steps` VALUES ('ILIAS\\SurveyQuestionPool\\Setup\\SurveyQuestionPoolDBUpdateSteps',1,'2024-07-30 14:37:06.775997','2024-07-30 14:37:06.777640');
 INSERT INTO `il_db_steps` VALUES ('ILIAS\\Wiki\\Setup\\ilWikiDBUpdateSteps',1,'2023-12-12 16:39:39.203953','2023-12-12 16:39:39.239197');
 INSERT INTO `il_db_steps` VALUES ('ILIAS\\Wiki\\Setup\\ilWikiDBUpdateSteps',2,'2023-12-12 16:39:39.239904','2023-12-12 16:39:39.245378');
 INSERT INTO `il_db_steps` VALUES ('ILIAS\\Wiki\\Setup\\ilWikiDBUpdateSteps',3,'2023-12-12 16:39:39.245988','2023-12-12 16:39:39.259866');
@@ -7223,6 +7256,9 @@ INSERT INTO `il_db_steps` VALUES ('ilMDCopyrightUpdateSteps',5,'2023-12-12 16:39
 INSERT INTO `il_db_steps` VALUES ('ilMDCopyrightUpdateSteps',6,'2023-12-12 16:39:40.651967','2023-12-12 16:39:40.657337');
 INSERT INTO `il_db_steps` VALUES ('ilMDCopyrightUpdateSteps',7,'2023-12-12 16:39:40.658051','2023-12-12 16:39:40.659947');
 INSERT INTO `il_db_steps` VALUES ('ilMDCopyrightUpdateSteps',8,'2023-12-12 16:39:40.660599','2023-12-12 16:39:40.662327');
+INSERT INTO `il_db_steps` VALUES ('ilMDCopyrightUpdateSteps',9,'2024-08-27 13:48:37.211327','2024-08-27 13:48:37.211612');
+INSERT INTO `il_db_steps` VALUES ('ilMDCopyrightUpdateSteps',10,'2024-08-27 13:48:37.211956','2024-08-27 13:48:37.212429');
+INSERT INTO `il_db_steps` VALUES ('ilMDCopyrightUpdateSteps',11,'2024-08-27 13:48:37.212704','2024-08-27 13:48:37.213194');
 INSERT INTO `il_db_steps` VALUES ('ilMDLOMUpdateSteps',1,'2023-12-12 16:39:40.476845','2023-12-12 16:39:40.482604');
 INSERT INTO `il_db_steps` VALUES ('ilMDLOMUpdateSteps',2,'2023-12-12 16:39:40.483210','2023-12-12 16:39:40.493505');
 INSERT INTO `il_db_steps` VALUES ('ilMDLOMUpdateSteps',3,'2023-12-12 16:39:40.494133','2023-12-12 16:39:40.504527');
@@ -7273,6 +7309,7 @@ INSERT INTO `il_db_steps` VALUES ('ilResourceStorageDB80',9,'2023-12-12 16:39:38
 INSERT INTO `il_db_steps` VALUES ('ilResourceStorageDB80',10,'2023-12-12 16:39:38.567201','2023-12-12 16:39:38.580806');
 INSERT INTO `il_db_steps` VALUES ('ilResourceStorageDB80',11,'2023-12-12 16:39:38.581452','2023-12-12 16:39:38.598519');
 INSERT INTO `il_db_steps` VALUES ('ilResourceStorageDB80',12,'2023-12-12 16:39:38.599143','2023-12-12 16:39:38.604883');
+INSERT INTO `il_db_steps` VALUES ('ilResourceStorageDB80',13,'2024-07-30 14:37:06.756935','2024-07-30 14:37:06.761419');
 INSERT INTO `il_db_steps` VALUES ('ilResourceStorageDB90',1,'2023-12-12 16:39:39.951730','2023-12-12 16:39:39.994214');
 INSERT INTO `il_db_steps` VALUES ('ilResourceStorageDB90',2,'2023-12-12 16:39:39.994875','2023-12-12 16:39:40.021210');
 INSERT INTO `il_db_steps` VALUES ('ilResourceStorageDB90',3,'2023-12-12 16:39:40.021888','2023-12-12 16:39:40.027049');
@@ -7318,6 +7355,7 @@ INSERT INTO `il_db_steps` VALUES ('ilTest9DBUpdateSteps',15,'2023-12-12 16:39:41
 INSERT INTO `il_db_steps` VALUES ('ilTest9DBUpdateSteps',16,'2023-12-12 16:39:41.290328','2023-12-12 16:39:41.295496');
 INSERT INTO `il_db_steps` VALUES ('ilTest9DBUpdateSteps',17,'2023-12-12 16:39:41.296140','2023-12-12 16:39:41.301432');
 INSERT INTO `il_db_steps` VALUES ('ilTest9DBUpdateSteps',18,'2023-12-12 16:39:41.302072','2023-12-12 16:39:41.307756');
+INSERT INTO `il_db_steps` VALUES ('ilTest9DBUpdateSteps',19,'2024-04-30 15:11:09.036627','2024-04-30 15:11:09.040172');
 INSERT INTO `il_db_steps` VALUES ('ilTestQuestionPool80DBUpdateSteps',1,'2023-12-12 16:39:41.023770','2023-12-12 16:39:41.025028');
 INSERT INTO `il_db_steps` VALUES ('ilTestQuestionPool80DBUpdateSteps',2,'2023-12-12 16:39:41.025620','2023-12-12 16:39:41.031146');
 INSERT INTO `il_db_steps` VALUES ('ilTestQuestionPool80DBUpdateSteps',3,'2023-12-12 16:39:41.031863','2023-12-12 16:39:41.038435');
@@ -7334,6 +7372,7 @@ INSERT INTO `il_db_steps` VALUES ('ilUser8DBUpdateSteps',1,'2023-12-12 16:39:41.
 INSERT INTO `il_db_steps` VALUES ('ilUser8DBUpdateSteps',2,'2023-12-12 16:39:41.393125','2023-12-12 16:39:41.414590');
 INSERT INTO `il_db_steps` VALUES ('ilUser8DBUpdateSteps',3,'2023-12-12 16:39:41.415252','2023-12-12 16:39:41.420387');
 INSERT INTO `il_db_steps` VALUES ('ilUser8DBUpdateSteps',4,'2024-01-31 14:38:25.421546','2024-01-31 14:38:25.426800');
+INSERT INTO `il_db_steps` VALUES ('ilUser8DBUpdateSteps',5,'2024-08-27 13:48:37.218362','2024-08-27 13:48:37.221598');
 INSERT INTO `il_db_steps` VALUES ('ilUserDB90',1,'2023-12-12 16:39:41.421460','2023-12-12 16:39:41.427774');
 INSERT INTO `il_db_steps` VALUES ('ilUserDB90',2,'2023-12-12 16:39:41.428399','2023-12-12 16:39:41.440313');
 INSERT INTO `il_db_steps` VALUES ('ilUserDB90',3,'2023-12-12 16:39:41.441020','2023-12-12 16:39:41.446411');
@@ -7342,6 +7381,7 @@ INSERT INTO `il_db_steps` VALUES ('ilUserDB90',5,'2023-12-12 16:39:41.448240','2
 INSERT INTO `il_db_steps` VALUES ('ilUserDB90',6,'2023-12-12 16:39:41.454487','2023-12-12 16:39:41.459460');
 INSERT INTO `il_db_steps` VALUES ('ilUserDB90',7,'2023-12-12 16:39:41.460101','2023-12-12 16:39:41.470891');
 INSERT INTO `il_db_steps` VALUES ('ilUserDB90',8,'2024-01-31 14:38:25.427561','2024-01-31 14:38:25.428274');
+INSERT INTO `il_db_steps` VALUES ('ilUserDB90',9,'2024-04-30 15:11:09.040853','2024-04-30 15:11:09.041154');
 INSERT INTO `il_db_steps` VALUES ('ilWebResourceDBUpdateSteps',1,'2023-12-12 16:39:41.472042','2023-12-12 16:39:41.478899');
 INSERT INTO `il_db_steps` VALUES ('ilWebResourceDropValidSteps',1,'2023-12-12 16:39:41.479938','2023-12-12 16:39:41.486502');
 INSERT INTO `il_db_steps` VALUES ('ilWebResourceDropValidSteps',2,'2023-12-12 16:39:41.487110','2023-12-12 16:39:41.493529');
@@ -7349,6 +7389,8 @@ INSERT INTO `il_db_steps` VALUES ('ilWebResourceDropValidSteps',3,'2023-12-12 16
 INSERT INTO `il_db_steps` VALUES ('ilWebResourceDropValidSteps',4,'2023-12-12 16:39:41.500904','2023-12-12 16:39:41.502972');
 INSERT INTO `il_db_steps` VALUES ('ilWOPIDB90',1,'2023-12-12 16:39:38.616248','2023-12-12 16:39:38.629801');
 INSERT INTO `il_db_steps` VALUES ('ilWOPIDB90',2,'2023-12-12 16:39:38.630407','2023-12-12 16:39:38.650076');
+INSERT INTO `il_db_steps` VALUES ('ilWOPIDB90',3,'2024-05-17 13:25:33.945970','2024-05-17 13:25:33.948899');
+INSERT INTO `il_db_steps` VALUES ('ilWOPIDB90',4,'2024-05-17 13:25:33.949334','2024-05-17 13:25:33.951124');
 INSERT INTO `il_db_steps` VALUES ('ilWorkflowEngine9DBUpdateSteps',1,'2023-12-12 16:39:41.554740','2023-12-12 16:39:41.555315');
 INSERT INTO `il_db_steps` VALUES ('ilWorkflowEngine9DBUpdateSteps',2,'2023-12-12 16:39:41.555897','2023-12-12 16:39:41.595930');
 INSERT INTO `il_db_steps` VALUES ('ilWorkflowEngine9DBUpdateSteps',3,'2023-12-12 16:39:41.596587','2023-12-12 16:39:41.597086');
@@ -7481,7 +7523,8 @@ CREATE TABLE `il_dcl_field_prop` (
   `name` varchar(4000) NOT NULL DEFAULT '',
   `value` varchar(4000) DEFAULT NULL,
   PRIMARY KEY (`id`),
-  KEY `i1_idx` (`id`,`field_id`)
+  KEY `i1_idx` (`id`,`field_id`),
+  KEY `i2_idx` (`field_id`)
 ) ;
 
 --
@@ -7626,7 +7669,9 @@ CREATE TABLE `il_dcl_sel_opts` (
   `opt_id` bigint(20) NOT NULL,
   `sorting` bigint(20) NOT NULL,
   `value` varchar(4000) NOT NULL DEFAULT '',
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `i1_idx` (`field_id`),
+  KEY `i2_idx` (`opt_id`)
 ) ;
 
 --
@@ -7891,11 +7936,6 @@ CREATE TABLE `il_dcl_tableview` (
   `roles` longtext DEFAULT NULL,
   `description` varchar(128) NOT NULL DEFAULT '',
   `tableview_order` bigint(20) DEFAULT NULL,
-  `step_vs` tinyint(4) NOT NULL DEFAULT 1,
-  `step_c` tinyint(4) NOT NULL DEFAULT 0,
-  `step_e` tinyint(4) NOT NULL DEFAULT 0,
-  `step_o` tinyint(4) NOT NULL DEFAULT 0,
-  `step_s` tinyint(4) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   KEY `t1_idx` (`table_id`)
 ) ;
@@ -7930,7 +7970,9 @@ CREATE TABLE `il_dcl_tfield_set` (
   `field_order` bigint(20) DEFAULT NULL,
   `exportable` tinyint(4) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
-  KEY `t2_idx` (`table_id`,`field`)
+  KEY `t2_idx` (`table_id`,`field`),
+  KEY `i3_idx` (`field`),
+  KEY `i4_idx` (`table_id`)
 ) ;
 
 --
@@ -7972,7 +8014,9 @@ CREATE TABLE `il_dcl_tview_set` (
   `required_edit` tinyint(4) NOT NULL DEFAULT 0,
   `locked_edit` tinyint(4) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
-  KEY `i1_idx` (`tableview_id`)
+  KEY `i1_idx` (`tableview_id`),
+  KEY `i2_idx` (`field`),
+  KEY `i3_idx` (`in_filter`)
 ) ;
 
 --
@@ -8116,32 +8160,6 @@ CREATE TABLE `il_file_icon` (
 -- Dumping data for table `il_file_icon`
 --
 
-INSERT INTO `il_file_icon` VALUES ('d53194df-8a3e-4471-9676-3e62ece3dfa4',1,1);
-INSERT INTO `il_file_icon` VALUES ('a2f53c97-c1b5-453d-893e-1409f031b6d8',1,1);
-INSERT INTO `il_file_icon` VALUES ('0656f6b5-a74c-422c-b263-fbaf7d28469a',1,1);
-INSERT INTO `il_file_icon` VALUES ('e8b73278-7cb6-4fcc-93c4-971abd04ffed',1,1);
-INSERT INTO `il_file_icon` VALUES ('88ad4ffb-f891-443a-b570-526ce59447a7',1,1);
-INSERT INTO `il_file_icon` VALUES ('582493f2-a1b5-4b9c-99bf-b6225cca777e',1,1);
-INSERT INTO `il_file_icon` VALUES ('eb4eb7a4-af64-43ba-a485-ed74ae36b917',1,1);
-INSERT INTO `il_file_icon` VALUES ('15b77530-376c-4565-aebb-4fd9f81b7406',1,1);
-INSERT INTO `il_file_icon` VALUES ('ddc3f919-c08b-4bd9-8149-aaa106ac8419',1,1);
-INSERT INTO `il_file_icon` VALUES ('25ffc93d-4e2f-4544-9978-f6afd9faaafc',1,1);
-INSERT INTO `il_file_icon` VALUES ('f9d619a1-e359-433b-a338-0e5b744f90ed',1,1);
-INSERT INTO `il_file_icon` VALUES ('d3b44a21-7b2f-4f6f-bd9c-6e5f28275e7e',1,1);
-INSERT INTO `il_file_icon` VALUES ('907de3d5-797c-4b43-ad56-3284ace25a67',1,1);
-INSERT INTO `il_file_icon` VALUES ('d2300b0c-7cdd-4979-b748-c28eb6b02b6b',1,1);
-INSERT INTO `il_file_icon` VALUES ('e954badf-5f25-45e2-8f00-41dd0c9611d4',1,1);
-INSERT INTO `il_file_icon` VALUES ('84292ec7-c6f2-4e06-9921-16e19019602a',1,1);
-INSERT INTO `il_file_icon` VALUES ('6e6f130c-e504-48e5-b2e2-274a964fb88a',1,1);
-INSERT INTO `il_file_icon` VALUES ('3132880a-4691-4252-bd0e-fb35a2c03669',1,1);
-INSERT INTO `il_file_icon` VALUES ('a99277be-66ea-4c60-89fb-2fc86e9f1301',1,1);
-INSERT INTO `il_file_icon` VALUES ('e9f692d3-c8b3-4eda-b74f-2b182c44aebd',1,1);
-INSERT INTO `il_file_icon` VALUES ('fd4756bd-20db-4a27-beb1-b87866ada9b0',1,1);
-INSERT INTO `il_file_icon` VALUES ('d1bcba58-4773-43e0-9fce-839558dbd509',1,1);
-INSERT INTO `il_file_icon` VALUES ('542265be-b570-40ea-904c-7f830e3c7e28',1,1);
-INSERT INTO `il_file_icon` VALUES ('8d479113-78e5-4fdf-bd3b-b0e7e95006d9',1,1);
-INSERT INTO `il_file_icon` VALUES ('5361c298-6383-4f3c-93ba-6e5df61268d7',1,1);
-INSERT INTO `il_file_icon` VALUES ('7ada888f-283b-4161-b3a7-bb69f207deb0',1,1);
 
 --
 -- Table structure for table `il_file_icon_suffixes`
@@ -8156,32 +8174,6 @@ CREATE TABLE `il_file_icon_suffixes` (
 -- Dumping data for table `il_file_icon_suffixes`
 --
 
-INSERT INTO `il_file_icon_suffixes` VALUES ('d53194df-8a3e-4471-9676-3e62ece3dfa4','avi');
-INSERT INTO `il_file_icon_suffixes` VALUES ('a2f53c97-c1b5-453d-893e-1409f031b6d8','bmp');
-INSERT INTO `il_file_icon_suffixes` VALUES ('0656f6b5-a74c-422c-b263-fbaf7d28469a','csv');
-INSERT INTO `il_file_icon_suffixes` VALUES ('e8b73278-7cb6-4fcc-93c4-971abd04ffed','docx');
-INSERT INTO `il_file_icon_suffixes` VALUES ('88ad4ffb-f891-443a-b570-526ce59447a7','flv');
-INSERT INTO `il_file_icon_suffixes` VALUES ('582493f2-a1b5-4b9c-99bf-b6225cca777e','gif');
-INSERT INTO `il_file_icon_suffixes` VALUES ('eb4eb7a4-af64-43ba-a485-ed74ae36b917','ico');
-INSERT INTO `il_file_icon_suffixes` VALUES ('15b77530-376c-4565-aebb-4fd9f81b7406','jpg');
-INSERT INTO `il_file_icon_suffixes` VALUES ('ddc3f919-c08b-4bd9-8149-aaa106ac8419','md');
-INSERT INTO `il_file_icon_suffixes` VALUES ('25ffc93d-4e2f-4544-9978-f6afd9faaafc','mov');
-INSERT INTO `il_file_icon_suffixes` VALUES ('f9d619a1-e359-433b-a338-0e5b744f90ed','mp3');
-INSERT INTO `il_file_icon_suffixes` VALUES ('d3b44a21-7b2f-4f6f-bd9c-6e5f28275e7e','mp4');
-INSERT INTO `il_file_icon_suffixes` VALUES ('907de3d5-797c-4b43-ad56-3284ace25a67','odp');
-INSERT INTO `il_file_icon_suffixes` VALUES ('d2300b0c-7cdd-4979-b748-c28eb6b02b6b','ods');
-INSERT INTO `il_file_icon_suffixes` VALUES ('e954badf-5f25-45e2-8f00-41dd0c9611d4','odt');
-INSERT INTO `il_file_icon_suffixes` VALUES ('84292ec7-c6f2-4e06-9921-16e19019602a','pdf');
-INSERT INTO `il_file_icon_suffixes` VALUES ('6e6f130c-e504-48e5-b2e2-274a964fb88a','png');
-INSERT INTO `il_file_icon_suffixes` VALUES ('3132880a-4691-4252-bd0e-fb35a2c03669','pptx');
-INSERT INTO `il_file_icon_suffixes` VALUES ('a99277be-66ea-4c60-89fb-2fc86e9f1301','rtf');
-INSERT INTO `il_file_icon_suffixes` VALUES ('e9f692d3-c8b3-4eda-b74f-2b182c44aebd','svg');
-INSERT INTO `il_file_icon_suffixes` VALUES ('fd4756bd-20db-4a27-beb1-b87866ada9b0','tiff');
-INSERT INTO `il_file_icon_suffixes` VALUES ('d1bcba58-4773-43e0-9fce-839558dbd509','txt');
-INSERT INTO `il_file_icon_suffixes` VALUES ('542265be-b570-40ea-904c-7f830e3c7e28','wav');
-INSERT INTO `il_file_icon_suffixes` VALUES ('8d479113-78e5-4fdf-bd3b-b0e7e95006d9','wma');
-INSERT INTO `il_file_icon_suffixes` VALUES ('5361c298-6383-4f3c-93ba-6e5df61268d7','xlsx');
-INSERT INTO `il_file_icon_suffixes` VALUES ('7ada888f-283b-4161-b3a7-bb69f207deb0','xml');
 
 --
 -- Table structure for table `il_gc_memcache_server`
@@ -8266,7 +8258,7 @@ INSERT INTO `il_md_cpr_selections` VALUES (4,'Attribution No Derivatives (by-nd)
 INSERT INTO `il_md_cpr_selections` VALUES (5,'Attribution Share Alike (by-sa)','Creative Commons License','<a rel=\"license\" href=\"http://creativecommons.org/licenses/by-sa/4.0/\"><img alt=\"Creative Commons License\" style=\"border-width:0\" src=\"https://i.creativecommons.org/l/by-sa/4.0/88x31.png\" /></a><br />This work is licensed under a <a rel=\"license\" href=\"http://creativecommons.org/licenses/by-sa/4.0/\">Creative Commons Attribution-ShareAlike 4.0 International License</a>.','en',0,1,0,0,0,NULL,NULL,NULL,NULL,0,NULL);
 INSERT INTO `il_md_cpr_selections` VALUES (6,'Attribution (by)','Creative Commons License','<a rel=\"license\" href=\"http://creativecommons.org/licenses/by/4.0/\"><img alt=\"Creative Commons License\" style=\"border-width:0\" src=\"https://i.creativecommons.org/l/by/4.0/88x31.png\" /></a><br />This work is licensed under a <a rel=\"license\" href=\"http://creativecommons.org/licenses/by/4.0/\">Creative Commons Attribution 4.0 International License</a>.','en',0,1,0,0,0,NULL,NULL,NULL,NULL,0,NULL);
 INSERT INTO `il_md_cpr_selections` VALUES (7,'All rights reserved','','This work has all rights reserved by the owner.','en',0,1,1,0,0,NULL,NULL,NULL,NULL,0,NULL);
-INSERT INTO `il_md_cpr_selections` VALUES (8,'Public Domain','',NULL,NULL,0,1,0,0,1,'This work is free of known copyright restrictions.','http://creativecommons.org/publicdomain/zero/1.0/','https://mirrors.creativecommons.org/presskit/buttons/88x31/svg/cc-zero.svg','CC0',1,'');
+INSERT INTO `il_md_cpr_selections` VALUES (8,'Public Domain','Creative work to which no exclusive intellectual property rights apply.',NULL,NULL,0,1,0,0,1,'Public Domain','http://creativecommons.org/publicdomain/zero/1.0/','https://mirrors.creativecommons.org/presskit/buttons/88x31/svg/cc-zero.svg','CC0',1,'');
 
 --
 -- Table structure for table `il_md_cpr_selections_seq`
@@ -10719,32 +10711,6 @@ CREATE TABLE `il_resource` (
 -- Dumping data for table `il_resource`
 --
 
-INSERT INTO `il_resource` VALUES ('0656f6b5-a74c-422c-b263-fbaf7d28469a','fsv2',1);
-INSERT INTO `il_resource` VALUES ('15b77530-376c-4565-aebb-4fd9f81b7406','fsv2',1);
-INSERT INTO `il_resource` VALUES ('25ffc93d-4e2f-4544-9978-f6afd9faaafc','fsv2',1);
-INSERT INTO `il_resource` VALUES ('3132880a-4691-4252-bd0e-fb35a2c03669','fsv2',1);
-INSERT INTO `il_resource` VALUES ('5361c298-6383-4f3c-93ba-6e5df61268d7','fsv2',1);
-INSERT INTO `il_resource` VALUES ('542265be-b570-40ea-904c-7f830e3c7e28','fsv2',1);
-INSERT INTO `il_resource` VALUES ('582493f2-a1b5-4b9c-99bf-b6225cca777e','fsv2',1);
-INSERT INTO `il_resource` VALUES ('6e6f130c-e504-48e5-b2e2-274a964fb88a','fsv2',1);
-INSERT INTO `il_resource` VALUES ('7ada888f-283b-4161-b3a7-bb69f207deb0','fsv2',1);
-INSERT INTO `il_resource` VALUES ('84292ec7-c6f2-4e06-9921-16e19019602a','fsv2',1);
-INSERT INTO `il_resource` VALUES ('88ad4ffb-f891-443a-b570-526ce59447a7','fsv2',1);
-INSERT INTO `il_resource` VALUES ('8d479113-78e5-4fdf-bd3b-b0e7e95006d9','fsv2',1);
-INSERT INTO `il_resource` VALUES ('907de3d5-797c-4b43-ad56-3284ace25a67','fsv2',1);
-INSERT INTO `il_resource` VALUES ('a2f53c97-c1b5-453d-893e-1409f031b6d8','fsv2',1);
-INSERT INTO `il_resource` VALUES ('a99277be-66ea-4c60-89fb-2fc86e9f1301','fsv2',1);
-INSERT INTO `il_resource` VALUES ('d1bcba58-4773-43e0-9fce-839558dbd509','fsv2',1);
-INSERT INTO `il_resource` VALUES ('d2300b0c-7cdd-4979-b748-c28eb6b02b6b','fsv2',1);
-INSERT INTO `il_resource` VALUES ('d3b44a21-7b2f-4f6f-bd9c-6e5f28275e7e','fsv2',1);
-INSERT INTO `il_resource` VALUES ('d53194df-8a3e-4471-9676-3e62ece3dfa4','fsv2',1);
-INSERT INTO `il_resource` VALUES ('ddc3f919-c08b-4bd9-8149-aaa106ac8419','fsv2',1);
-INSERT INTO `il_resource` VALUES ('e8b73278-7cb6-4fcc-93c4-971abd04ffed','fsv2',1);
-INSERT INTO `il_resource` VALUES ('e954badf-5f25-45e2-8f00-41dd0c9611d4','fsv2',1);
-INSERT INTO `il_resource` VALUES ('e9f692d3-c8b3-4eda-b74f-2b182c44aebd','fsv2',1);
-INSERT INTO `il_resource` VALUES ('eb4eb7a4-af64-43ba-a485-ed74ae36b917','fsv2',1);
-INSERT INTO `il_resource` VALUES ('f9d619a1-e359-433b-a338-0e5b744f90ed','fsv2',1);
-INSERT INTO `il_resource` VALUES ('fd4756bd-20db-4a27-beb1-b87866ada9b0','fsv2',1);
 
 --
 -- Table structure for table `il_resource_flavour`
@@ -10785,32 +10751,6 @@ CREATE TABLE `il_resource_info` (
 -- Dumping data for table `il_resource_info`
 --
 
-INSERT INTO `il_resource_info` VALUES ('0656f6b5-a74c-422c-b263-fbaf7d28469a','icon_file_csv.svg','svg','image/svg+xml',3146,1702399180,1);
-INSERT INTO `il_resource_info` VALUES ('15b77530-376c-4565-aebb-4fd9f81b7406','icon_file_jpg.svg','svg','image/svg+xml',3145,1702399180,1);
-INSERT INTO `il_resource_info` VALUES ('25ffc93d-4e2f-4544-9978-f6afd9faaafc','icon_file_mov.svg','svg','image/svg+xml',3146,1702399180,1);
-INSERT INTO `il_resource_info` VALUES ('3132880a-4691-4252-bd0e-fb35a2c03669','icon_file_pptx.svg','svg','image/svg+xml',3145,1702399180,1);
-INSERT INTO `il_resource_info` VALUES ('5361c298-6383-4f3c-93ba-6e5df61268d7','icon_file_xlsx.svg','svg','image/svg+xml',3146,1702399180,1);
-INSERT INTO `il_resource_info` VALUES ('542265be-b570-40ea-904c-7f830e3c7e28','icon_file_wav.svg','svg','image/svg+xml',3146,1702399180,1);
-INSERT INTO `il_resource_info` VALUES ('582493f2-a1b5-4b9c-99bf-b6225cca777e','icon_file_gif.svg','svg','image/svg+xml',3146,1702399180,1);
-INSERT INTO `il_resource_info` VALUES ('6e6f130c-e504-48e5-b2e2-274a964fb88a','icon_file_png.svg','svg','image/svg+xml',3145,1702399180,1);
-INSERT INTO `il_resource_info` VALUES ('7ada888f-283b-4161-b3a7-bb69f207deb0','icon_file_xml.svg','svg','image/svg+xml',3146,1702399180,1);
-INSERT INTO `il_resource_info` VALUES ('84292ec7-c6f2-4e06-9921-16e19019602a','icon_file_pdf.svg','svg','image/svg+xml',3145,1702399180,1);
-INSERT INTO `il_resource_info` VALUES ('88ad4ffb-f891-443a-b570-526ce59447a7','icon_file_flv.svg','svg','image/svg+xml',3146,1702399180,1);
-INSERT INTO `il_resource_info` VALUES ('8d479113-78e5-4fdf-bd3b-b0e7e95006d9','icon_file_wma.svg','svg','image/svg+xml',3145,1702399180,1);
-INSERT INTO `il_resource_info` VALUES ('907de3d5-797c-4b43-ad56-3284ace25a67','icon_file_odp.svg','svg','image/svg+xml',3146,1702399180,1);
-INSERT INTO `il_resource_info` VALUES ('a2f53c97-c1b5-453d-893e-1409f031b6d8','icon_file_bmp.svg','svg','image/svg+xml',3146,1702399180,1);
-INSERT INTO `il_resource_info` VALUES ('a99277be-66ea-4c60-89fb-2fc86e9f1301','icon_file_rtf.svg','svg','image/svg+xml',3145,1702399180,1);
-INSERT INTO `il_resource_info` VALUES ('d1bcba58-4773-43e0-9fce-839558dbd509','icon_file_txt.svg','svg','image/svg+xml',3145,1702399180,1);
-INSERT INTO `il_resource_info` VALUES ('d2300b0c-7cdd-4979-b748-c28eb6b02b6b','icon_file_ods.svg','svg','image/svg+xml',3146,1702399180,1);
-INSERT INTO `il_resource_info` VALUES ('d3b44a21-7b2f-4f6f-bd9c-6e5f28275e7e','icon_file_mp4.svg','svg','image/svg+xml',3146,1702399180,1);
-INSERT INTO `il_resource_info` VALUES ('d53194df-8a3e-4471-9676-3e62ece3dfa4','icon_file_avi.svg','svg','image/svg+xml',3146,1702399180,1);
-INSERT INTO `il_resource_info` VALUES ('ddc3f919-c08b-4bd9-8149-aaa106ac8419','icon_file_md.svg','svg','image/svg+xml',3143,1702399180,1);
-INSERT INTO `il_resource_info` VALUES ('e8b73278-7cb6-4fcc-93c4-971abd04ffed','icon_file_docx.svg','svg','image/svg+xml',3150,1702399180,1);
-INSERT INTO `il_resource_info` VALUES ('e954badf-5f25-45e2-8f00-41dd0c9611d4','icon_file_odt.svg','svg','image/svg+xml',3146,1702399180,1);
-INSERT INTO `il_resource_info` VALUES ('e9f692d3-c8b3-4eda-b74f-2b182c44aebd','icon_file_svg.svg','svg','image/svg+xml',3145,1702399180,1);
-INSERT INTO `il_resource_info` VALUES ('eb4eb7a4-af64-43ba-a485-ed74ae36b917','icon_file_ico.svg','svg','image/svg+xml',3146,1702399180,1);
-INSERT INTO `il_resource_info` VALUES ('f9d619a1-e359-433b-a338-0e5b744f90ed','icon_file_mp3.svg','svg','image/svg+xml',3146,1702399180,1);
-INSERT INTO `il_resource_info` VALUES ('fd4756bd-20db-4a27-beb1-b87866ada9b0','icon_file_tiff.svg','svg','image/svg+xml',3147,1702399180,1);
 
 --
 -- Table structure for table `il_resource_rc`
@@ -10862,32 +10802,6 @@ CREATE TABLE `il_resource_revision` (
 -- Dumping data for table `il_resource_revision`
 --
 
-INSERT INTO `il_resource_revision` VALUES ('0656f6b5-a74c-422c-b263-fbaf7d28469a',1,1,6,'icon_file_csv.svg',10);
-INSERT INTO `il_resource_revision` VALUES ('15b77530-376c-4565-aebb-4fd9f81b7406',1,1,6,'icon_file_jpg.svg',10);
-INSERT INTO `il_resource_revision` VALUES ('25ffc93d-4e2f-4544-9978-f6afd9faaafc',1,1,6,'icon_file_mov.svg',10);
-INSERT INTO `il_resource_revision` VALUES ('3132880a-4691-4252-bd0e-fb35a2c03669',1,1,6,'icon_file_pptx.svg',10);
-INSERT INTO `il_resource_revision` VALUES ('5361c298-6383-4f3c-93ba-6e5df61268d7',1,1,6,'icon_file_xlsx.svg',10);
-INSERT INTO `il_resource_revision` VALUES ('542265be-b570-40ea-904c-7f830e3c7e28',1,1,6,'icon_file_wav.svg',10);
-INSERT INTO `il_resource_revision` VALUES ('582493f2-a1b5-4b9c-99bf-b6225cca777e',1,1,6,'icon_file_gif.svg',10);
-INSERT INTO `il_resource_revision` VALUES ('6e6f130c-e504-48e5-b2e2-274a964fb88a',1,1,6,'icon_file_png.svg',10);
-INSERT INTO `il_resource_revision` VALUES ('7ada888f-283b-4161-b3a7-bb69f207deb0',1,1,6,'icon_file_xml.svg',10);
-INSERT INTO `il_resource_revision` VALUES ('84292ec7-c6f2-4e06-9921-16e19019602a',1,1,6,'icon_file_pdf.svg',10);
-INSERT INTO `il_resource_revision` VALUES ('88ad4ffb-f891-443a-b570-526ce59447a7',1,1,6,'icon_file_flv.svg',10);
-INSERT INTO `il_resource_revision` VALUES ('8d479113-78e5-4fdf-bd3b-b0e7e95006d9',1,1,6,'icon_file_wma.svg',10);
-INSERT INTO `il_resource_revision` VALUES ('907de3d5-797c-4b43-ad56-3284ace25a67',1,1,6,'icon_file_odp.svg',10);
-INSERT INTO `il_resource_revision` VALUES ('a2f53c97-c1b5-453d-893e-1409f031b6d8',1,1,6,'icon_file_bmp.svg',10);
-INSERT INTO `il_resource_revision` VALUES ('a99277be-66ea-4c60-89fb-2fc86e9f1301',1,1,6,'icon_file_rtf.svg',10);
-INSERT INTO `il_resource_revision` VALUES ('d1bcba58-4773-43e0-9fce-839558dbd509',1,1,6,'icon_file_txt.svg',10);
-INSERT INTO `il_resource_revision` VALUES ('d2300b0c-7cdd-4979-b748-c28eb6b02b6b',1,1,6,'icon_file_ods.svg',10);
-INSERT INTO `il_resource_revision` VALUES ('d3b44a21-7b2f-4f6f-bd9c-6e5f28275e7e',1,1,6,'icon_file_mp4.svg',10);
-INSERT INTO `il_resource_revision` VALUES ('d53194df-8a3e-4471-9676-3e62ece3dfa4',1,1,6,'icon_file_avi.svg',10);
-INSERT INTO `il_resource_revision` VALUES ('ddc3f919-c08b-4bd9-8149-aaa106ac8419',1,1,6,'icon_file_md.svg',10);
-INSERT INTO `il_resource_revision` VALUES ('e8b73278-7cb6-4fcc-93c4-971abd04ffed',1,1,6,'icon_file_docx.svg',10);
-INSERT INTO `il_resource_revision` VALUES ('e954badf-5f25-45e2-8f00-41dd0c9611d4',1,1,6,'icon_file_odt.svg',10);
-INSERT INTO `il_resource_revision` VALUES ('e9f692d3-c8b3-4eda-b74f-2b182c44aebd',1,1,6,'icon_file_svg.svg',10);
-INSERT INTO `il_resource_revision` VALUES ('eb4eb7a4-af64-43ba-a485-ed74ae36b917',1,1,6,'icon_file_ico.svg',10);
-INSERT INTO `il_resource_revision` VALUES ('f9d619a1-e359-433b-a338-0e5b744f90ed',1,1,6,'icon_file_mp3.svg',10);
-INSERT INTO `il_resource_revision` VALUES ('fd4756bd-20db-4a27-beb1-b87866ada9b0',1,1,6,'icon_file_tiff.svg',10);
 
 --
 -- Table structure for table `il_resource_stkh`
@@ -10912,39 +10826,13 @@ INSERT INTO `il_resource_stkh` VALUES ('file_icon','ILIAS\\File\\Icon\\ilObjFile
 CREATE TABLE `il_resource_stkh_u` (
   `rid` varchar(64) NOT NULL DEFAULT '',
   `stakeholder_id` varchar(64) DEFAULT NULL,
-  KEY `i2_idx` (`stakeholder_id`)
+  PRIMARY KEY (`rid`)
 ) ;
 
 --
 -- Dumping data for table `il_resource_stkh_u`
 --
 
-INSERT INTO `il_resource_stkh_u` VALUES ('d53194df-8a3e-4471-9676-3e62ece3dfa4','file_icon');
-INSERT INTO `il_resource_stkh_u` VALUES ('a2f53c97-c1b5-453d-893e-1409f031b6d8','file_icon');
-INSERT INTO `il_resource_stkh_u` VALUES ('0656f6b5-a74c-422c-b263-fbaf7d28469a','file_icon');
-INSERT INTO `il_resource_stkh_u` VALUES ('e8b73278-7cb6-4fcc-93c4-971abd04ffed','file_icon');
-INSERT INTO `il_resource_stkh_u` VALUES ('88ad4ffb-f891-443a-b570-526ce59447a7','file_icon');
-INSERT INTO `il_resource_stkh_u` VALUES ('582493f2-a1b5-4b9c-99bf-b6225cca777e','file_icon');
-INSERT INTO `il_resource_stkh_u` VALUES ('eb4eb7a4-af64-43ba-a485-ed74ae36b917','file_icon');
-INSERT INTO `il_resource_stkh_u` VALUES ('15b77530-376c-4565-aebb-4fd9f81b7406','file_icon');
-INSERT INTO `il_resource_stkh_u` VALUES ('ddc3f919-c08b-4bd9-8149-aaa106ac8419','file_icon');
-INSERT INTO `il_resource_stkh_u` VALUES ('25ffc93d-4e2f-4544-9978-f6afd9faaafc','file_icon');
-INSERT INTO `il_resource_stkh_u` VALUES ('f9d619a1-e359-433b-a338-0e5b744f90ed','file_icon');
-INSERT INTO `il_resource_stkh_u` VALUES ('d3b44a21-7b2f-4f6f-bd9c-6e5f28275e7e','file_icon');
-INSERT INTO `il_resource_stkh_u` VALUES ('907de3d5-797c-4b43-ad56-3284ace25a67','file_icon');
-INSERT INTO `il_resource_stkh_u` VALUES ('d2300b0c-7cdd-4979-b748-c28eb6b02b6b','file_icon');
-INSERT INTO `il_resource_stkh_u` VALUES ('e954badf-5f25-45e2-8f00-41dd0c9611d4','file_icon');
-INSERT INTO `il_resource_stkh_u` VALUES ('84292ec7-c6f2-4e06-9921-16e19019602a','file_icon');
-INSERT INTO `il_resource_stkh_u` VALUES ('6e6f130c-e504-48e5-b2e2-274a964fb88a','file_icon');
-INSERT INTO `il_resource_stkh_u` VALUES ('3132880a-4691-4252-bd0e-fb35a2c03669','file_icon');
-INSERT INTO `il_resource_stkh_u` VALUES ('a99277be-66ea-4c60-89fb-2fc86e9f1301','file_icon');
-INSERT INTO `il_resource_stkh_u` VALUES ('e9f692d3-c8b3-4eda-b74f-2b182c44aebd','file_icon');
-INSERT INTO `il_resource_stkh_u` VALUES ('fd4756bd-20db-4a27-beb1-b87866ada9b0','file_icon');
-INSERT INTO `il_resource_stkh_u` VALUES ('d1bcba58-4773-43e0-9fce-839558dbd509','file_icon');
-INSERT INTO `il_resource_stkh_u` VALUES ('542265be-b570-40ea-904c-7f830e3c7e28','file_icon');
-INSERT INTO `il_resource_stkh_u` VALUES ('8d479113-78e5-4fdf-bd3b-b0e7e95006d9','file_icon');
-INSERT INTO `il_resource_stkh_u` VALUES ('5361c298-6383-4f3c-93ba-6e5df61268d7','file_icon');
-INSERT INTO `il_resource_stkh_u` VALUES ('7ada888f-283b-4161-b3a7-bb69f207deb0','file_icon');
 
 --
 -- Table structure for table `il_subscribers`
@@ -11372,7 +11260,7 @@ CREATE TABLE `ldap_server_settings` (
   `tls` int(11) NOT NULL DEFAULT 0,
   `bind_type` int(11) NOT NULL DEFAULT 0,
   `bind_user` varchar(255) DEFAULT NULL,
-  `bind_pass` varchar(32) DEFAULT NULL,
+  `bind_pass` varchar(100) DEFAULT NULL,
   `search_base` varchar(255) DEFAULT NULL,
   `user_scope` tinyint(4) NOT NULL DEFAULT 0,
   `user_attribute` varchar(255) DEFAULT NULL,
@@ -11390,7 +11278,7 @@ CREATE TABLE `ldap_server_settings` (
   `sync_per_cron` tinyint(4) NOT NULL DEFAULT 0,
   `role_sync_active` tinyint(4) NOT NULL DEFAULT 0,
   `role_bind_dn` varchar(255) DEFAULT NULL,
-  `role_bind_pass` varchar(32) DEFAULT NULL,
+  `role_bind_pass` varchar(100) DEFAULT NULL,
   `migration` tinyint(4) NOT NULL DEFAULT 0,
   `authentication` tinyint(4) NOT NULL DEFAULT 1,
   `authentication_type` tinyint(4) NOT NULL DEFAULT 0,
@@ -12948,7 +12836,7 @@ CREATE TABLE `map_area` (
   `item_id` int(11) NOT NULL DEFAULT 0,
   `nr` int(11) NOT NULL DEFAULT 0,
   `shape` varchar(20) DEFAULT NULL,
-  `coords` varchar(200) DEFAULT NULL,
+  `coords` varchar(4000) DEFAULT NULL,
   `link_type` char(3) DEFAULT NULL,
   `title` varchar(200) DEFAULT NULL,
   `href` varchar(800) DEFAULT NULL,
@@ -13700,7 +13588,7 @@ INSERT INTO `object_data` VALUES (34,'typ','lm','Learning module Object',-1,'200
 INSERT INTO `object_data` VALUES (35,'typ','notf','Note Folder Object',-1,'2002-12-21 00:04:00','2002-12-21 00:04:00','',NULL,NULL);
 INSERT INTO `object_data` VALUES (36,'typ','note','Note Object',-1,'2002-12-21 00:04:00','2002-12-21 00:04:00','',NULL,NULL);
 INSERT INTO `object_data` VALUES (37,'typ','frm','Forum object',-1,'2002-07-15 15:54:22','2003-08-15 12:36:40','',NULL,NULL);
-INSERT INTO `object_data` VALUES (70,'lng','en','installed',-1,NULL,'2024-01-31 15:38:25','',NULL,NULL);
+INSERT INTO `object_data` VALUES (70,'lng','en','installed',-1,NULL,'2024-08-27 13:48:37','',NULL,NULL);
 INSERT INTO `object_data` VALUES (71,'lng','de','not_installed',6,'2003-08-15 10:25:19','2015-12-22 16:29:24','',NULL,NULL);
 INSERT INTO `object_data` VALUES (72,'lng','es','not_installed',6,'2003-08-15 10:25:19','2003-08-15 10:25:19','',NULL,NULL);
 INSERT INTO `object_data` VALUES (73,'lng','it','not_installed',6,'2003-08-15 10:25:19','2003-08-15 10:25:19','',NULL,NULL);
@@ -20515,7 +20403,7 @@ INSERT INTO `settings` VALUES ('common','ilfrmnoti1','1');
 INSERT INTO `settings` VALUES ('common','ilfrmreadidx1','1');
 INSERT INTO `settings` VALUES ('common','ilfrmthri2','1');
 INSERT INTO `settings` VALUES ('common','ilGlobalTstPoolUsageSettingInitilisation','1');
-INSERT INTO `settings` VALUES ('common','ilias_version','9.0.0');
+INSERT INTO `settings` VALUES ('common','ilias_version','9.4.0');
 INSERT INTO `settings` VALUES ('common','ilinc_akclassvalues_required','1');
 INSERT INTO `settings` VALUES ('common','ilmpathix','1');
 INSERT INTO `settings` VALUES ('common','iloscmsgidx1','1');
@@ -20801,7 +20689,6 @@ INSERT INTO `settings` VALUES ('common','tracking_time_span','300');
 INSERT INTO `settings` VALUES ('common','tst_score_rep_consts_cleaned','1');
 INSERT INTO `settings` VALUES ('common','unzip_path','');
 INSERT INTO `settings` VALUES ('common','user_activity_time','5');
-INSERT INTO `settings` VALUES ('common','user_adm_alpha_nav','1');
 INSERT INTO `settings` VALUES ('common','user_delete_own_account','0');
 INSERT INTO `settings` VALUES ('common','user_delete_own_account_email','');
 INSERT INTO `settings` VALUES ('common','user_portfolios','1');
@@ -22457,7 +22344,7 @@ CREATE TABLE `svy_question` (
   `questiontype_fi` int(11) NOT NULL DEFAULT 0,
   `obj_fi` int(11) NOT NULL DEFAULT 0,
   `owner_fi` int(11) NOT NULL DEFAULT 0,
-  `title` varchar(100) DEFAULT NULL,
+  `title` varchar(200) DEFAULT NULL,
   `description` varchar(200) DEFAULT NULL,
   `author` varchar(100) DEFAULT NULL,
   `obligatory` varchar(1) DEFAULT '1',
@@ -23305,6 +23192,24 @@ CREATE TABLE `tst_qst_solved` (
 
 
 --
+-- Table structure for table `tst_qst_var_presented`
+--
+
+CREATE TABLE `tst_qst_var_presented` (
+  `question_id` bigint(20) NOT NULL,
+  `active_id` bigint(20) NOT NULL,
+  `pass` bigint(20) NOT NULL,
+  `variable` varchar(32) NOT NULL,
+  `value` varchar(64) NOT NULL,
+  PRIMARY KEY (`question_id`,`active_id`,`pass`,`variable`)
+) ;
+
+--
+-- Dumping data for table `tst_qst_var_presented`
+--
+
+
+--
 -- Table structure for table `tst_result_cache`
 --
 
@@ -24042,9 +23947,10 @@ CREATE TABLE `usr_account_codes_seq` (
 --
 
 CREATE TABLE `usr_change_email_token` (
-  `token` varchar(32) DEFAULT NULL,
+  `token` varchar(32) NOT NULL,
   `new_email` varchar(256) DEFAULT NULL,
-  `valid_until` bigint(20) DEFAULT NULL
+  `valid_until` bigint(20) DEFAULT NULL,
+  PRIMARY KEY (`token`)
 ) ;
 
 --
@@ -24919,6 +24825,8 @@ CREATE TABLE `wopi_action` (
   `name` varchar(256) NOT NULL,
   `ext` varchar(256) NOT NULL,
   `urlsrc` varchar(2048) NOT NULL,
+  `url_appendix` varchar(4000) DEFAULT NULL,
+  `target_ext` varchar(256) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `i1_idx` (`app_id`)
 ) ;
@@ -25215,4 +25123,4 @@ CREATE TABLE `xmlvalue_seq` (
 
 
 
--- Dump completed on 2024-01-31 15:38:26
+-- Dump completed on 2024-08-27 13:48:38

@@ -31,6 +31,7 @@ class ilGlossaryDataSet extends ilDataSet
 {
     protected int $old_glo_id;
     protected ilObjGlossary $current_obj;
+    protected array $used_term_ids = [];
     protected ilLogger $log;
 
     public function __construct()
@@ -264,6 +265,7 @@ class ilGlossaryDataSet extends ilDataSet
         ilImportMapping $a_mapping,
         string $a_schema_version
     ): void {
+        $a_rec = $this->stripTags($a_rec);
         switch ($a_entity) {
             case "glo":
 
@@ -301,6 +303,25 @@ class ilGlossaryDataSet extends ilDataSet
                 $a_mapping->addMapping("Services/AdvancedMetaData", "parent", $a_rec["Id"], $newObj->getId());
                 break;
 
+            case "glo_definition":
+
+                // note: this must be kept for older glossaries <= 8
+
+                $term_id = (int) $a_mapping->getMapping("Modules/Glossary", "term", $a_rec["TermId"]);
+                if ($term_id == 0) {
+                    $this->log->debug("ERROR: Did not find glossary term glo_term id '" . $a_rec["TermId"] . "' for definition id '" . $a_rec["Id"] . "'.");
+                } elseif (!in_array($term_id, $this->used_term_ids)) {
+                    $a_mapping->addMapping(
+                        "Services/COPage",
+                        "pg",
+                        "gdf:" . $a_rec["Id"],
+                        "term:" . $term_id
+                    );
+                    // use only first definition for term, because multiple definitons are abandoned since ILIAS 9
+                    $this->used_term_ids[] = $term_id;
+                }
+                break;
+
             case "glo_term":
 
                 // id, glo_id, term, language, import_id, short_text, short_text_dirty
@@ -310,8 +331,8 @@ class ilGlossaryDataSet extends ilDataSet
                 $term->setGlossaryId($glo_id);
                 $term->setTerm($a_rec["Term"]);
                 $term->setLanguage($a_rec["Language"]);
-                $term->setShortText($a_rec["ShortText"]);
-                $term->setShortTextDirty($a_rec["ShortTextDirty"]);
+                $term->setShortText($a_rec["ShortText"] ?? "");
+                $term->setShortTextDirty($a_rec["ShortTextDirty"] ?? true);
                 if ($this->getCurrentInstallationId() > 0) {
                     $term->setImportId("il_" . $this->getCurrentInstallationId() . "_git_" . $a_rec["Id"]);
                 }

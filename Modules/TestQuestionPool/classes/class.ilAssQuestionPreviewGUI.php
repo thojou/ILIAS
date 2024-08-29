@@ -16,10 +16,13 @@
  *
  *********************************************************************/
 
+use ILIAS\HTTP\Services as HTTPServices;
+use ILIAS\Refinery\Factory as Refinery;
 use ILIAS\Refinery\Random\Group as RandomGroup;
 use ILIAS\Refinery\Random\Seed\RandomSeed;
 use ILIAS\Refinery\Random\Seed\GivenSeed;
 use ILIAS\Refinery\Transformation;
+use ILIAS\GlobalScreen\Services as GlobalScreen;
 
 /**
  * @author		Björn Heyser <bheyser@databay.de>
@@ -63,6 +66,9 @@ class ilAssQuestionPreviewGUI
         private ilDBInterface $db,
         private ilObjUser $user,
         private RandomGroup $randomGroup,
+        private GlobalScreen $global_screen,
+        private HTTPServices $http,
+        private Refinery $refinery
     ) {
         $this->tpl->addCss(ilObjStyleSheet::getContentStylePath(0));
         $this->tpl->addCss(ilObjStyleSheet::getSyntaxStylePath());
@@ -129,6 +135,11 @@ class ilAssQuestionPreviewGUI
         $this->questionGUI->setRenderPurpose(assQuestionGUI::RENDER_PURPOSE_DEMOPLAY);
     }
 
+    public function getObject(): assQuestion
+    {
+        return $this->questionOBJ;
+    }
+
     public function initPreviewSettings($parentRefId): void
     {
         $this->previewSettings = new ilAssQuestionPreviewSettings($parentRefId);
@@ -181,7 +192,8 @@ class ilAssQuestionPreviewGUI
                     $this->ctrl,
                     $this->lng,
                     $this->tpl,
-                    $this->tabs
+                    $this->tabs,
+                    $this->global_screen
                 );
                 $this->ctrl->forwardCommand($gui);
                 break;
@@ -211,11 +223,15 @@ class ilAssQuestionPreviewGUI
 
     protected function isCommentingRequired(): bool
     {
-        if ($this->previewSettings->isTestRefId()) {
-            return false;
-        }
+        $ref_id = $this->http->wrapper()->query()->retrieve(
+            'ref_id',
+            $this->refinery->byTrying([
+                $this->refinery->kindlyTo()->int(),
+                $this->refinery->always(0)
+            ])
+        );
 
-        return (bool) $this->rbac_system->checkAccess('write', (int) $_GET['ref_id']);
+        return !$this->previewSettings->isTestRefId() && $this->rbac_system->checkAccess('read', (int) $ref_id);
     }
 
     private function showCmd(string $notes_panel_html = ''): void

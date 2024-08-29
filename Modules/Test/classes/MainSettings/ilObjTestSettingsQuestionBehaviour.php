@@ -129,7 +129,7 @@ class ilObjTestSettingsQuestionBehaviour extends TestSettings
                 ];
             }
         );
-        $sub_inputs_autosave['autosave_interval'] = $f->numeric($lng->txt('autosave_ival'))
+        $sub_inputs_autosave['autosave_interval'] = $f->numeric($lng->txt('autosave_ival'), $lng->txt('seconds'))
             ->withRequired(true)
             ->withAdditionalTransformation($refinery->int()->isGreaterThan(0))
             ->withValue($this->getAutosaveInterval() / 1000);
@@ -160,11 +160,16 @@ class ilObjTestSettingsQuestionBehaviour extends TestSettings
     ): OptionalGroup {
         $constraint = $refinery->custom()->constraint(
             fn(?array $vs) => $vs === null
+                || $vs['enabled_feedback_types']['instant_feedback_specific'] === null
+                    && $vs['enabled_feedback_types']['instant_feedback_generic'] === null
+                    && $vs['enabled_feedback_types']['instant_feedback_points'] === null
+                    && $vs['enabled_feedback_types']['instant_feedback_solution'] === null
+                    && $vs['feedback_trigger'] === null
                 || (
                     $vs['enabled_feedback_types']['instant_feedback_specific'] === true
-                        || $vs['enabled_feedback_types']['instant_feedback_generic'] === true
-                        || $vs['enabled_feedback_types']['instant_feedback_points'] === true
-                        || $vs['enabled_feedback_types']['instant_feedback_solution'] === true
+                    || $vs['enabled_feedback_types']['instant_feedback_generic'] === true
+                    || $vs['enabled_feedback_types']['instant_feedback_points'] === true
+                    || $vs['enabled_feedback_types']['instant_feedback_solution'] === true
                 )
                     && $vs['feedback_trigger'] !== '',
             $lng->txt('select_at_least_one_feedback_type_and_trigger')

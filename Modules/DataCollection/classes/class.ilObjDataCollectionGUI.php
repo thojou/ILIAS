@@ -32,7 +32,9 @@ declare(strict_types=1);
 class ilObjDataCollectionGUI extends ilObject2GUI
 {
     public const GET_REF_ID = "ref_id";
+    public const GET_TABLE_ID = "table_id";
     public const GET_VIEW_ID = "tableview_id";
+    public const GET_RECORD_ID = "record_id";
 
     public const TAB_EDIT_DCL = 'settings';
     public const TAB_LIST_TABLES = 'dcl_tables';
@@ -334,7 +336,7 @@ class ilObjDataCollectionGUI extends ilObject2GUI
             $this->locator->addItem(
                 $this->object->getTitle(),
                 $this->ctrl->getLinkTarget($this, ""),
-                (string)$this->object->getRefId()
+                (string) $this->object->getRefId()
             );
         }
     }
@@ -348,32 +350,44 @@ class ilObjDataCollectionGUI extends ilObject2GUI
         $access = $DIC->access();
         $tpl = $DIC->ui()->mainTemplate();
 
-        $target_parts = explode("_", $a_target);
-        if (count($target_parts) === 1) {
-            [$ref_id] = $target_parts;
-        } elseif (count($target_parts) === 2) {
-            [$ref_id, $viewId] = $target_parts;
-        } else {
-            [$ref_id, $viewId, $recordId] = $target_parts;
+        $params = explode("_", $a_target);
+        //41821: Handles old permanent links. This is deprecated and removed for ILIAS 10
+        if (count($params) > 1) {
+            $goto_string = explode('/', $DIC->http()->request()->getRequestTarget());
+            if(str_contains(end($goto_string), 'dcl_')) {
+                $view = new ilDclTableView((int) $params[1]);
+                $params = [$params[0], $view->getTableId(), $params[1] ?? null, $params[2] ?? null];
+            }
         }
+        $values = [self::GET_REF_ID, self::GET_TABLE_ID, self::GET_VIEW_ID, self::GET_RECORD_ID];
+        $values = array_combine($values, array_pad($params, count($values), null));
+
+        $ref_id = (int) $values[self::GET_REF_ID];
 
         //load record list
-        if ($access->checkAccess('read', "", (int)$ref_id)) {
+        if ($access->checkAccess('read', "", $ref_id)) {
             $ilCtrl->setParameterByClass(ilRepositoryGUI::class, self::GET_REF_ID, $ref_id);
-            if (isset($viewId)) {
-                $ilCtrl->setParameterByClass(ilRepositoryGUI::class, self::GET_VIEW_ID, $viewId);
+            if ($values[self::GET_TABLE_ID] !== null) {
+                $ilCtrl->setParameterByClass(ilObjDataCollectionGUI::class, self::GET_TABLE_ID, $values[self::GET_TABLE_ID]);
+                if ($values[self::GET_VIEW_ID] !== null) {
+                    $ilCtrl->setParameterByClass(ilObjDataCollectionGUI::class, self::GET_VIEW_ID, $values[self::GET_VIEW_ID]);
+                }
+                if ($values[self::GET_RECORD_ID] !== null) {
+                    $ilCtrl->setParameterByClass(ilDclDetailedViewGUI::class, self::GET_RECORD_ID, $values[self::GET_RECORD_ID]);
+                    $ilCtrl->redirectByClass([ilRepositoryGUI::class, self::class, ilDclDetailedViewGUI::class], "renderRecord");
+                }
             }
-            $ilCtrl->redirectByClass(ilRepositoryGUI::class, "listRecords");
+            $ilCtrl->redirectByClass([ilRepositoryGUI::class, self::class, ilDclRecordListGUI::class], "listRecords");
         }
         //redirect to info screen
-        elseif ($access->checkAccess('visbile', "", (int)$ref_id)) {
-            ilObjectGUI::_gotoRepositoryNode((int)$a_target, "infoScreen");
+        elseif ($access->checkAccess('visbile', "", $ref_id)) {
+            ilObjectGUI::_gotoRepositoryNode((int) $a_target, "infoScreen");
         }
         //redirect if no permission given
         else {
             $message = sprintf(
                 $lng->txt("msg_no_perm_read_item"),
-                ilObject::_lookupTitle(ilObject::_lookupObjId((int)$a_target))
+                ilObject::_lookupTitle(ilObject::_lookupObjId((int) $a_target))
             );
             $tpl->setOnScreenMessage('failure', $message, true);
 
@@ -399,9 +413,7 @@ class ilObjDataCollectionGUI extends ilObject2GUI
         // read permission
         if ($this->access->checkAccess('read', "", $ref_id) === true) {
             // list records
-            $this->ctrl->setParameterByClass(ilDclRecordListGUI::class, "tableview_id", $this->getTableViewId());
-            $link = $this->ctrl->getLinkTargetByClass(ilDclRecordListGUI::class, "show");
-            $this->addTab(self::TAB_CONTENT, $link);
+            $this->addTab(self::TAB_CONTENT, $this->ctrl->getLinkTargetByClass(ilDclRecordListGUI::class, "show"));
         }
 
         // visible or read permission
@@ -509,7 +521,6 @@ class ilObjDataCollectionGUI extends ilObject2GUI
 
     final public function listRecords(): void
     {
-        $this->ctrl->setParameterByClass(ilDclRecordListGUI::class, "tableview_id", $this->getTableViewId());
         $this->ctrl->redirectByClass(ilDclRecordListGUI::class, "show");
     }
 
@@ -529,11 +540,11 @@ class ilObjDataCollectionGUI extends ilObject2GUI
 
     protected function updateCustom(ilPropertyFormGUI $form): void
     {
-        $this->object->setOnline((bool)$form->getInput("is_online"));
-        $this->object->setRating((bool)$form->getInput("rating"));
-        $this->object->setPublicNotes((bool)$form->getInput("public_notes"));
-        $this->object->setApproval((bool)$form->getInput("approval"));
-        $this->object->setNotification((bool)$form->getInput("notification"));
+        $this->object->setOnline((bool) $form->getInput("is_online"));
+        $this->object->setRating((bool) $form->getInput("rating"));
+        $this->object->setPublicNotes((bool) $form->getInput("public_notes"));
+        $this->object->setApproval((bool) $form->getInput("approval"));
+        $this->object->setNotification((bool) $form->getInput("notification"));
 
         $this->object_service->commonSettings()->legacyForm($form, $this->object)->saveTileImage();
 

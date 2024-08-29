@@ -149,6 +149,8 @@ class ilAssQuestionHintPageObjectCommandForwarder extends ilAssQuestionAbstractP
 
         $pageObjectGUI->setEnabledTabs(false);
         $pageObjectGUI->setEnableEditing(false);
+        $pageObjectGUI->setTemplateTargetVar('ADM_CONTENT');
+        $pageObjectGUI->setTemplateOutput(true);
 
         $pageObjectGUI->setPresentationTitle(
             ilAssQuestionHint::getHintIndexLabel($this->lng, $this->questionHint->getIndex())
@@ -176,7 +178,8 @@ class ilAssQuestionHintPageObjectCommandForwarder extends ilAssQuestionAbstractP
             $this->questionHint->getPageObjectType(),
             $this->questionHint->getId()
         );
-
+        $pageObjectGUI->setTemplateTargetVar('ADM_CONTENT');
+        $pageObjectGUI->setTemplateOutput(true);
         $pageObjectGUI->setEnabledTabs(true);
 
         return $pageObjectGUI;

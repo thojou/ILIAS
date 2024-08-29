@@ -45,10 +45,24 @@ class ProfileGUI
         return $avatar;
     }
 
-    public function getNamePresentation(int $user_id, bool $link_profile = false, string $back = ""): string
+    public function getPicturePath(int $user_id): string
+    {
+        global $DIC;
+
+        if ($this->profile->exists($user_id)) {
+            return \ilObjUser::_getPersonalPicturePath($user_id, "xsmall", true, true);
+        }
+        $fac = new \ilUserAvatarFactory($DIC);
+        $avatar = $fac->avatar("xsmall");
+        $avatar->setName(substr($this->profile->getDeletedUserAvatarText(), 0, 2));
+        $avatar->setUsrId($user_id);
+        return $avatar->getUrl();
+    }
+
+    public function getNamePresentation(int $user_id, bool $link_profile = false, string $back = "", $force_first_last = false): string
     {
         if ($this->profile->exists($user_id)) {
-            $name = \ilUserUtil::getNamePresentation($user_id, false, $link_profile, $back);
+            $name = \ilUserUtil::getNamePresentation($user_id, false, $link_profile, $back, $force_first_last);
         } else {
             $name = $this->profile->getDeletedUserNamePresentation();
         }

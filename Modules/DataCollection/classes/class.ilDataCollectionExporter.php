@@ -16,8 +16,6 @@
  *
  *********************************************************************/
 
-
-
 declare(strict_types=1);
 
 class ilDataCollectionExporter extends ilXmlExporter
@@ -46,6 +44,13 @@ class ilDataCollectionExporter extends ilXmlExporter
                 'xsd_file" => "ilias_dcl_4_5.xsd',
                 'uses_dataset' => true,
                 'min' => '4.5.0',
+                'max' => '8.12',
+            ],
+            '8.13' => [
+                'namespace' => 'https://www.ilias.de/Modules/DataCollection/dcl/4_5',
+                'xsd_file" => "ilias_dcl_4_5.xsd',
+                'uses_dataset' => true,
+                'min' => '8.13',
                 'max' => '',
             ],
         ];

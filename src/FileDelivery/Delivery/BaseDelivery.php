@@ -36,9 +36,10 @@ abstract class BaseDelivery
 
     public function __construct(
         protected \ILIAS\HTTP\Services $http,
-        protected ResponseBuilder $response_builder
+        protected ResponseBuilder $response_builder,
+        protected ResponseBuilder $fallback_response_builder,
     ) {
-        if(is_readable(self::MIME_TYPE_MAP)) {
+        if (is_readable(self::MIME_TYPE_MAP)) {
             $map = include self::MIME_TYPE_MAP;
         }
         $this->mime_type_map = $map ?? [];

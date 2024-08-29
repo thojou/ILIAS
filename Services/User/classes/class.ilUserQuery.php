@@ -315,7 +315,7 @@ class ilUserQuery
         // User filter
         $count_query .= " WHERE 1 = 1 ";
         $count_user_filter = "usr_data.usr_id != " . $ilDB->quote(ANONYMOUS_USER_ID, "integer");
-        if ($this->users and is_array(($this->users))) {
+        if ($this->users && is_array(($this->users))) {
             $query .= ' AND ' . $ilDB->in('usr_data.usr_id', $this->users, false, 'integer');
             $count_user_filter = $ilDB->in('usr_data.usr_id', $this->users, false, 'integer');
         }
@@ -398,7 +398,11 @@ class ilUserQuery
                 "SELECT DISTINCT ud.usr_id " .
                 "FROM usr_data ud join rbac_ua ON (ud.usr_id = rbac_ua.usr_id) " .
                 "JOIN object_data od ON (rbac_ua.rol_id = od.obj_id) " .
-                "WHERE od.title LIKE 'il_crs_%')";
+                "JOIN rbac_fa ON (rbac_ua.rol_id = rbac_fa.rol_id) " .
+                "JOIN tree ON (rbac_fa.parent = tree.child) " .
+                "WHERE od.title LIKE 'il_crs_%' " .
+                "AND rbac_fa.assign = 'y' " .
+                "AND tree.tree > 0)";
             $query .= $add;
             $count_query .= $add;
             $where = " AND";
@@ -408,7 +412,11 @@ class ilUserQuery
                 "SELECT DISTINCT ud.usr_id " .
                 "FROM usr_data ud join rbac_ua ON (ud.usr_id = rbac_ua.usr_id) " .
                 "JOIN object_data od ON (rbac_ua.rol_id = od.obj_id) " .
-                "WHERE od.title LIKE 'il_grp_%')";
+                "JOIN rbac_fa ON (rbac_ua.rol_id = rbac_fa.rol_id) " .
+                "JOIN tree ON (rbac_fa.parent = tree.child) " .
+                "WHERE od.title LIKE 'il_grp_%' " .
+                "AND rbac_fa.assign = 'y' " .
+                "AND tree.tree > 0)";
             $query .= $add;
             $count_query .= $add;
             $where = " AND";

@@ -125,7 +125,7 @@ class ilObjLTIConsumer extends ilObject2
         return $this->activationStartingTime;
     }
 
-    public function setActivationStartingTime(int $activationStartingTime): void
+    public function setActivationStartingTime(?int $activationStartingTime = null): void
     {
         $this->activationStartingTime = $activationStartingTime;
     }
@@ -135,7 +135,7 @@ class ilObjLTIConsumer extends ilObject2
         return $this->activationEndingTime;
     }
 
-    public function setActivationEndingTime(int $activationEndingTime): void
+    public function setActivationEndingTime(?int $activationEndingTime = null): void
     {
         $this->activationEndingTime = $activationEndingTime;
     }
@@ -429,11 +429,15 @@ class ilObjLTIConsumer extends ilObject2
             switch ($activation["timing_type"]) {
                 case ilObjectActivation::TIMINGS_ACTIVATION:
                     $this->setActivationLimited(true);
-
+                    if (!is_null($activation["timing_start"])) {
+                        $activation["timing_start"] = (int) $activation["timing_start"];
+                    }
                     $this->setActivationStartingTime($activation["timing_start"]);
-
+                    if (!is_null($activation["timing_end"])) {
+                        $activation["timing_end"] = (int) $activation["timing_end"];
+                    }
                     $this->setActivationEndingTime($activation["timing_end"]);
-                    $this->setActivationVisibility($activation["visible"]);
+                    $this->setActivationVisibility((bool) $activation["visible"]);
                     break;
 
                 default:
@@ -659,7 +663,9 @@ class ilObjLTIConsumer extends ilObject2
 
         $roles = $DIC->access()->checkAccess('write', '', $this->getRefId()) ? "Instructor" : "Learner";
         //todo if object is in course or group, roles would have to be taken from there s. Mantis 35435 - if necessary Jour Fixe topic
-        //$roles = "Administrator";
+        if ($DIC->rbac()->review()->isAssigned($DIC->user()->getId(), SYSTEM_ROLE_ID)) {
+            $roles = "Administrator";
+        }
 
         if ($this->getProvider()->getAlwaysLearner() == true) {
             $roles = "Learner";
@@ -779,6 +785,11 @@ class ilObjLTIConsumer extends ilObject2
         global $DIC; /* @var \ILIAS\DI\Container $DIC */
 
         $roles = $DIC->access()->checkAccess('write', '', $this->getRefId()) ? "Instructor" : "Learner";
+
+        if ($DIC->rbac()->review()->isAssigned($DIC->user()->getId(), SYSTEM_ROLE_ID)) {
+            $roles = "Administrator";
+        }
+
         if ($this->getProvider()->getAlwaysLearner() == true) {
             $roles = "Learner";
         }
@@ -819,7 +830,7 @@ class ilObjLTIConsumer extends ilObject2
                 break;
         }
 
-        $userIdLTI = ilCmiXapiUser::getIdentAsId($this->getProvider()->getPrivacyIdent(), $DIC->user());
+        $userIdLTI = ilCmiXapiUser::getIdent($this->getProvider()->getPrivacyIdent(), $DIC->user()); //was: getIdentAsId
 
         $emailPrimary = $cmixUser->getUsrIdent();
 
@@ -873,7 +884,7 @@ class ilObjLTIConsumer extends ilObject2
             $launch_vars['custom_' . $key] = $value;
         }
 
-        if ($this->getProvider()->isGradeSynchronization()) {
+        if ($this->getProvider()->isGradeSynchronization() || $this->getProvider()->getHasOutcome()) {
             include_once("Modules/LTIConsumer/classes/class.ilLTIConsumerGradeService.php");
             $gradeservice = new ilLTIConsumerGradeService();
             $launch_vars['custom_lineitem_url'] = self::getIliasHttpPath() . "/Modules/LTIConsumer/ltiservices.php/gradeservice/" . $contextId . "/lineitems/" . $this->id . "/lineitem";
@@ -940,7 +951,7 @@ class ilObjLTIConsumer extends ilObject2
                 break;
         }
 
-        $userIdLTI = ilCmiXapiUser::getIdentAsId($provider->getPrivacyIdent(), $DIC->user());
+        $userIdLTI = ilCmiXapiUser::getIdent($provider->getPrivacyIdent(), $DIC->user()); //was: getIdentAsId
         $emailPrimary = ilCmiXapiUser::getIdent($provider->getPrivacyIdent(), $DIC->user());
         $toolConsumerInstanceGuid = CLIENT_ID . ".";
         $parseIliasUrl = parse_url(self::getIliasHttpPath());
@@ -1070,7 +1081,7 @@ class ilObjLTIConsumer extends ilObject2
         }
         $privateKey = self::getPrivateKey();
         $jwt = Firebase\JWT\JWT::encode($payLoad, $privateKey['key'], 'RS256', $privateKey['kid']);
-        $newParms = array();
+        $newParms = $parms;//was array();
         $newParms['id_token'] = $jwt;
         return $newParms;
     }
@@ -1282,8 +1293,8 @@ class ilObjLTIConsumer extends ilObject2
         */
         $provider->setKeyType('JWK_KEYSET');
         $provider->setLtiVersion('1.3.0');
-        $provider->setClientId((string)$tokenObj->aud); //client_id
-        $provider->setCreator((int)$tokenObj->sub); // user_id
+        $provider->setClientId((string) $tokenObj->aud); //client_id
+        $provider->setCreator((int) $tokenObj->sub); // user_id
         $provider->setAvailability(ilLTIConsumeProvider::AVAILABILITY_CREATE);
         $provider->setIsGlobal(false);
         $provider->insert();
@@ -1359,14 +1370,18 @@ class ilObjLTIConsumer extends ilObject2
     {
         global $DIC;
         $auth = $DIC->http()->request()->getHeader("Authorization");
+        //        self::getLogger()->dump($auth);
         if (count($auth) < 1) {
             self::sendResponseError(405, "missing Authorization header");
         }
         preg_match('/Bearer\s+(.+)$/i', $auth[0], $matches);
         if (count($matches) != 2) {
+            //            self::getLogger()->error("405, missing required Authorization Baerer token in ".$auth[0]);
             self::sendResponseError(405, "missing required Authorization Baerer token");
         }
+
         $token = $matches[1];
+        //        self::getLogger()->dump($token);
         return self::getTokenObject($token);
     }
 

@@ -98,7 +98,7 @@ class ilUserProfile
     public function addStandardFieldsToForm(
         ilPropertyFormGUI $form,
         ?ilObjUser $user = null,
-        array $custom_fields = null
+        array $custom_fields = []
     ): void {
         $registration_settings = null;
         if ($this->mode == self::MODE_REGISTRATION) {
@@ -130,8 +130,12 @@ class ilUserProfile
         }
 
         // append custom fields as 'other'
-        if (is_array($custom_fields) && !$custom_fields_done) {
-            $form = $this->addCustomFieldsToForm($form, $custom_fields, $current_group);
+        if ($custom_fields !== [] && !$custom_fields_done) {
+            $form = $this->addCustomFieldsToForm(
+                $form,
+                $custom_fields,
+                $current_group
+            );
         }
     }
 
@@ -152,10 +156,10 @@ class ilUserProfile
         ilPropertyFormGUI $form,
         string $current_group,
         string $next_group,
-        ?array $custom_fields,
+        array $custom_fields,
         bool $custom_fields_done
     ): array {
-        if ($custom_fields !== null && !$custom_fields_done
+        if ($custom_fields !== [] && !$custom_fields_done
             && ($current_group === 'other' || $next_group === 'settings')) {
             // add 'other' subheader
             $form = $this->addCustomFieldsToForm(
@@ -615,20 +619,25 @@ class ilUserProfile
         string $lang_var,
         ?ilObjUser $user
     ): ilFormPropertyGUI {
-        $language_input = new ilSelectInputGUI($this->lng->txt($lang_var), 'usr_' . $field_id);
-        if ($user !== null) {
-            $language_input->setValue($user->$method());
-        }
         $options = [];
         $this->lng->loadLanguageModule('meta');
         foreach ($this->lng->getInstalledLanguages() as $lang_key) {
             $options[$lang_key] = $this->lng->txt('meta_l_' . $lang_key);
         }
+
         asort($options);
+        $language_input = new ilSelectInputGUI($this->lng->txt($lang_var), 'usr_' . $field_id);
+        if ($user !== null) {
+            $language_input->setValue($user->$method());
+        }
+
         $language_input->setOptions($options);
         $language_input->setRequired((bool) $this->settings->get('require_' . $field_id));
         if (!$language_input->getRequired() || $language_input->getValue()) {
-            $language_input->setDisabled((bool) $this->settings->get('usr_settings_disable_' . $field_id));
+            $language_input->setDisabled(
+                $this->settings->get('usr_settings_disable_' . $field_id) === '1'
+                || count($options) <= 1
+            );
         }
         return $language_input;
     }
@@ -643,8 +652,11 @@ class ilUserProfile
         return $non_editable_input;
     }
 
-    private function addCustomFieldsToForm(ilPropertyFormGUI $form, array $custom_fields, string $current_group): ilPropertyFormGUI
-    {
+    private function addCustomFieldsToForm(
+        ilPropertyFormGUI $form,
+        array $custom_fields,
+        string $current_group
+    ): ilPropertyFormGUI {
         if ($current_group !== 'other') {
             $section_header = new ilFormSectionHeaderGUI();
             $section_header->setTitle($this->lng->txt('other'));

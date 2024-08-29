@@ -351,7 +351,12 @@ class ilInitialisation
                 )
             );
             $fileUploadImpl->register(new InsecureFilenameSanitizerPreProcessor());
-            $fileUploadImpl->register(new SVGBlacklistPreProcessor($c->language()->txt("msg_security_svg_rejected")));
+            $fileUploadImpl->register(new SVGBlacklistPreProcessor(
+                $c->language()->txt("upload_svg_rejection_message"),
+                $c->language()->txt("upload_svg_rejection_message_script"),
+                $c->language()->txt("upload_svg_rejection_message_base64"),
+                $c->language()->txt("upload_svg_rejection_message_elements")
+            ));
 
             return $fileUploadImpl;
         };
@@ -614,7 +619,7 @@ class ilInitialisation
             $DIC->database(),
         );
         $DIC['global_cache'] = new \ILIAS\Cache\Services(
-            $legacy_settings->toConfig()
+            $legacy_settings->getConfig()
         );
     }
 
@@ -975,7 +980,6 @@ class ilInitialisation
                 $DIC->refinery()->always('')
             ])
         );
-
         $script = "login.php?" . $target . "client_id=" . $client_id;
         $script .= $session_expired ? "&session_expired=1" : "";
 
@@ -1023,24 +1027,27 @@ class ilInitialisation
     protected static function initAccessHandling(): void
     {
         self::initGlobal(
-            "rbacreview",
-            "ilRbacReview",
-            "./Services/AccessControl/classes/class.ilRbacReview.php"
+            'rbacreview',
+            'ilRbacReview',
+            './Services/AccessControl/classes/class.ilRbacReview.php',
+            true
         );
 
         $rbacsystem = ilRbacSystem::getInstance();
-        self::initGlobal("rbacsystem", $rbacsystem);
+        self::initGlobal('rbacsystem', $rbacsystem, null, true);
 
         self::initGlobal(
-            "rbacadmin",
-            "ilRbacAdmin",
-            "./Services/AccessControl/classes/class.ilRbacAdmin.php"
+            'rbacadmin',
+            'ilRbacAdmin',
+            './Services/AccessControl/classes/class.ilRbacAdmin.php',
+            true
         );
 
         self::initGlobal(
-            "ilAccess",
-            "ilAccess",
-            "./Services/AccessControl/classes/class.ilAccess.php"
+            'ilAccess',
+            'ilAccess',
+            './Services/AccessControl/classes/class.ilAccess.php',
+            true
         );
     }
 
@@ -1057,18 +1064,28 @@ class ilInitialisation
     }
 
     /**
-     * Initialize global instance
-     * @param string $a_name
-     * @param string|object $a_class
-     * @param ?string $a_source_file
+     * @param object|string $a_class
      */
-    protected static function initGlobal($a_name, $a_class, $a_source_file = null): void
-    {
+    protected static function initGlobal(
+        string $a_name,
+        $a_class,
+        ?string $a_source_file = null,
+        ?bool $destroy_existing = false
+    ): void {
         global $DIC;
+
+        if ($destroy_existing) {
+            if (isset($GLOBALS[$a_name])) {
+                unset($GLOBALS[$a_name]);
+            }
+            if (isset($DIC[$a_name])) {
+                unset($DIC[$a_name]);
+            }
+        }
 
         $GLOBALS[$a_name] = is_object($a_class) ? $a_class : new $a_class();
 
-        $DIC[$a_name] = function ($c) use ($a_name) {
+        $DIC[$a_name] = static function (Container $c) use ($a_name) {
             return $GLOBALS[$a_name];
         };
     }
@@ -1096,6 +1113,18 @@ class ilInitialisation
     {
         self::$already_initialized = false;
         self::initILIAS();
+    }
+
+    public static function reInitUser(): void
+    {
+        if (ilContext::initClient() && ilContext::hasUser()) {
+            self::initSession();
+            self::initUser();
+
+            if (ilContext::supportsPersistentSessions()) {
+                self::resumeUserSession();
+            }
+        }
     }
 
     /**
@@ -1157,7 +1186,11 @@ class ilInitialisation
      */
     protected static function initSession(): void
     {
-        $GLOBALS["DIC"]["ilAuthSession"] = function ($c) {
+        if (isset($GLOBALS['DIC']['ilAuthSession'])) {
+            unset($GLOBALS['DIC']['ilAuthSession']);
+        }
+
+        $GLOBALS['DIC']['ilAuthSession'] = static function (Container $c): ilAuthSession {
             $auth_session = ilAuthSession::getInstance(
                 $c['ilLoggerFactory']->getLogger('auth')
             );
@@ -1325,7 +1358,8 @@ class ilInitialisation
         self::initGlobal(
             "ilUser",
             new ilObjUser(ANONYMOUS_USER_ID),
-            "./Services/User/classes/class.ilObjUser.php"
+            "./Services/User/classes/class.ilObjUser.php",
+            true
         );
         $ilias->account = $ilUser;
 
@@ -1350,7 +1384,6 @@ class ilInitialisation
             if ($GLOBALS['DIC']['ilAuthSession']->isExpired()) {
                 ilSession::_destroy($_COOKIE[session_name()], ilSession::SESSION_CLOSE_EXPIRE);
             }
-
             ilLoggerFactory::getLogger('init')->debug('Current session is invalid: ' . $GLOBALS['DIC']['ilAuthSession']->getId());
             $current_script = substr(strrchr($_SERVER["PHP_SELF"], "/"), 1);
             if (self::blockedAuthentication($current_script)) {
@@ -1684,6 +1717,13 @@ class ilInitialisation
         ) {
             // @todo refinery undefind
             ilLoggerFactory::getLogger('auth')->debug('Blocked authentication for baseClass: ' . ($_GET['baseClass'] ?? ""));
+            return true;
+        }
+
+        if (
+            (strtolower($requestCmdClass ?? "") === strtolower(ilAccessibilityControlConceptGUI::class))
+        ) {
+            ilLoggerFactory::getLogger('auth')->debug('Blocked authentication for cmdClass: ' . $requestCmdClass);
             return true;
         }
 

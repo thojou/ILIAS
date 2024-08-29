@@ -1,6 +1,5 @@
 <?php
 
-declare(strict_types=0);
 /**
  * This file is part of ILIAS, a powerful learning management system
  * published by ILIAS open source e-Learning e.V.
@@ -17,6 +16,7 @@ declare(strict_types=0);
  *
  *********************************************************************/
 
+declare(strict_types=0);
 //seminar-patch: begin
 use ILIAS\Plugin\CourseBooking\Controller\LearningProgress\LearningProgressCourseController;
 
@@ -39,6 +39,8 @@ class ilTrMatrixTableGUI extends ilLPTableBaseGUI
     protected array $subitem_ids = [];
     protected int $in_course = 0;
     protected int $in_group = 0;
+    protected int $in_course_ref_id = 0;
+    protected int $in_group_ref_id = 0;
     protected array $privacy_fields = [];
     protected array $privacy_cols = [];
     protected array $perc_map = [];
@@ -67,16 +69,16 @@ class ilTrMatrixTableGUI extends ilLPTableBaseGUI
         $this->obj_id = ilObject::_lookupObjId($ref_id);
         $this->type = ilObject::_lookupType($this->obj_id); // #17188
 
-        $this->in_group = $this->tree->checkForParentType($this->ref_id, "grp");
-        if ($this->in_group) {
-            $this->in_group = ilObject::_lookupObjId($this->in_group);
+        $this->in_group_ref_id = $this->tree->checkForParentType($this->ref_id, "grp");
+        if ($this->in_group_ref_id) {
+            $this->in_group = ilObject::_lookupObjId($this->in_group_ref_id);
         } else {
-            $this->in_course = $this->tree->checkForParentType(
+            $this->in_course_ref_id = $this->tree->checkForParentType(
                 $this->ref_id,
                 "crs"
             );
-            if ($this->in_course) {
-                $this->in_course = ilObject::_lookupObjId($this->in_course);
+            if ($this->in_course_ref_id) {
+                $this->in_course = ilObject::_lookupObjId($this->in_course_ref_id);
             }
         }
 
@@ -213,8 +215,8 @@ class ilTrMatrixTableGUI extends ilLPTableBaseGUI
     public function getSelectableColumns(): array
     {
         $user_cols = $this->getSelectableUserColumns(
-            $this->in_course,
-            $this->in_group
+            $this->in_course_ref_id,
+            $this->in_group_ref_id
         );
         $columns = [];
         if ($this->obj_ids === null) {

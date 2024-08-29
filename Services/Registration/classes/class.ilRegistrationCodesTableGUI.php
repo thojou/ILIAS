@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 /**
  * This file is part of ILIAS, a powerful learning management system
  * published by ILIAS open source e-Learning e.V.
@@ -18,6 +16,7 @@ declare(strict_types=1);
  *
  *********************************************************************/
 
+declare(strict_types=1);
 
 /**
  * TableGUI class for registration codes
@@ -136,7 +135,7 @@ class ilRegistrationCodesTableGUI extends ilTable2GUI
             }
 
             if ($code["role"]) {
-                $result[$k]["role"] = $this->role_map[$code["role"]];
+                $result[$k]["role"] = $this->role_map[$code["role"]] ?? $this->lng->txt('deleted');
             } else {
                 $result[$k]["role"] = "";
             }

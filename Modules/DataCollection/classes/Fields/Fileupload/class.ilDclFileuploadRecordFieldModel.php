@@ -100,7 +100,7 @@ class ilDclFileuploadRecordFieldModel extends ilDclBaseRecordFieldModel
 
             $file_id = $file_obj->getId();
             $return = $file_id;
-        // handover for save-confirmation
+            // handover for save-confirmation
         } else {
             if (is_array($file) && isset($file['tmp_name']) && $file['tmp_name'] != "") {
                 $return = $file;
@@ -110,15 +110,6 @@ class ilDclFileuploadRecordFieldModel extends ilDclBaseRecordFieldModel
         }
 
         return $return;
-    }
-
-    public function addHiddenItemsToConfirmation(ilConfirmationGUI $confirmation): void
-    {
-        if (is_array($this->getValue())) {
-            foreach ($this->getValue() as $key => $value) {
-                $confirmation->addHiddenItem('field_' . $this->field->getId() . '[' . $key . ']', $value);
-            }
-        }
     }
 
     /**
@@ -151,13 +142,13 @@ class ilDclFileuploadRecordFieldModel extends ilDclBaseRecordFieldModel
      */
     public function parseExportValue($value): ?string
     {
-        if (!$value || !ilObject2::_exists((int)$value) || ilObject2::_lookupType((int)$value) != "file") {
+        if (!$value || !ilObject2::_exists((int) $value) || ilObject2::_lookupType((int) $value) != "file") {
             return null;
         }
 
         $file = $value;
         if ($file != "-") {
-            $file_obj = new ilObjFile((int)$file, false);
+            $file_obj = new ilObjFile((int) $file, false);
             return $file_obj->getFileName();
         }
 
@@ -191,7 +182,7 @@ class ilDclFileuploadRecordFieldModel extends ilDclBaseRecordFieldModel
      */
     public function afterClone(): void
     {
-        $field = ilDclCache::getCloneOf((int)$this->getField()->getId(), ilDclCache::TYPE_FIELD);
+        $field = ilDclCache::getCloneOf((int) $this->getField()->getId(), ilDclCache::TYPE_FIELD);
         $record = ilDclCache::getCloneOf($this->getRecord()->getId(), ilDclCache::TYPE_RECORD);
         $record_field = ilDclCache::getRecordFieldCache($record, $field);
 

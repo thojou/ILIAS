@@ -46,7 +46,7 @@ class ilDclFileRecordFieldModel extends ilDclBaseRecordFieldModel
 
     public function getRecordRepresentation(): ?ilDclBaseRecordRepresentation
     {
-        return new ilDclFileRecordPresentation($this);
+        return new ilDclFileRecordRepresentation($this);
     }
 
     public function parseValue($value)
@@ -130,15 +130,6 @@ class ilDclFileRecordFieldModel extends ilDclBaseRecordFieldModel
         return $this->getValue();
     }
 
-    public function addHiddenItemsToConfirmation(ilConfirmationGUI $confirmation): void
-    {
-        if (is_array($this->getValue())) {
-            foreach ($this->getValue() as $key => $value) {
-                $confirmation->addHiddenItem('field_' . $this->field->getId() . '[' . $key . ']', $value);
-            }
-        }
-    }
-
     public function delete(): void
     {
         if (($rid = $this->valueToRID($this->value)) !== null) {
@@ -188,7 +179,7 @@ class ilDclFileRecordFieldModel extends ilDclBaseRecordFieldModel
 
     public function afterClone(): void
     {
-        $field = ilDclCache::getCloneOf((int)$this->getField()->getId(), ilDclCache::TYPE_FIELD);
+        $field = ilDclCache::getCloneOf((int) $this->getField()->getId(), ilDclCache::TYPE_FIELD);
         $record = ilDclCache::getCloneOf($this->getRecord()->getId(), ilDclCache::TYPE_RECORD);
         $record_field = ilDclCache::getRecordFieldCache($record, $field);
 

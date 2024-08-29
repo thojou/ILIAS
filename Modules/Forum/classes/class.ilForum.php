@@ -563,6 +563,12 @@ class ilForum
             );
         }
 
+        $this->deletePostFiles(array_merge(
+            $this->getSubPathIdsForNode($post),
+            [$post->getId()]
+        ));
+
+        $affected_user_ids[] = $post->getPosAuthorId();
         $deleted_post_ids = $this->deletePostTree($p_node);
 
         $obj_history = new ilForumDraftsHistory();
@@ -574,8 +580,6 @@ class ilForum
         foreach ($deleted_post_ids as $post_id) {
             ilObjForum::_deleteReadEntries($post_id);
         }
-
-        $this->deletePostFiles($deleted_post_ids);
 
         $dead_pos = count($deleted_post_ids);
         $dead_thr = 0;
@@ -614,9 +618,10 @@ class ilForum
                     }
                 } catch (Exception) {
                 }
+                $affected_user_ids[] = (int) $posrec['pos_author_id'];
             }
 
-            $this->db->manipulateF('DELETE FROM frm_posts WHERE pos_thr_fk = %s', ['integer'], [$post->getTreeId()]);
+            $this->db->manipulateF('DELETE FROM frm_posts WHERE pos_thr_fk = %s', ['integer'], [$post->getThreadId()]);
         } else {
             for ($i = 0; $i < $dead_pos; $i++) {
                 $this->db->manipulateF('DELETE FROM frm_posts WHERE pos_pk = %s', ['integer'], [$deleted_post_ids[$i]]);
@@ -717,7 +722,7 @@ class ilForum
                 [
                     'obj_id' => $this->getForumId(),
                     'ref_id' => $this->getForumRefId(),
-                    'post' => $post
+                    'user_ids' => $affected_user_ids
                 ]
             );
         }
@@ -1013,8 +1018,10 @@ class ilForum
         $res = $this->db->queryF($query, $data_types, $data);
         while ($row = $this->db->fetchAssoc($res)) {
             if (
-                'g' === $row['public_profile'] ||
-                (!$this->user->isAnonymous() && in_array($row['public_profile'], ['y', 'g'], true))
+                !in_array($row['public_profile'], [
+                    ilPersonalProfileMode::PROFILE_ENABLED_LOGGED_IN_USERS,
+                    ilPersonalProfileMode::PROFILE_ENABLED_GLOBAL], true)
+                || ($this->user->isAnonymous() && $row['public_profile'] !== ilPersonalProfileMode::PROFILE_ENABLED_GLOBAL)
             ) {
                 $row['lastname'] = '';
                 $row['firstname'] = '';
@@ -1316,6 +1323,25 @@ class ilForum
     }
 
     /**
+     * @return list<int> A list of post ids
+     */
+    public function getSubPathIdsForNode(ilForumPost $post): array
+    {
+        $res = $this->db->queryF(
+            'SELECT pos_fk FROM frm_posts_tree WHERE lft BETWEEN %s AND %s AND thr_fk = %s',
+            [ilDBConstants::T_INTEGER, ilDBConstants::T_INTEGER, ilDBConstants::T_INTEGER],
+            [$post->getLft(), $post->getRgt(), $post->getTreeId()]
+        );
+
+        $post_ids = [];
+        while ($post_tree_data = $this->db->fetchAssoc($res)) {
+            $post_ids[] = (int) $post_tree_data['pos_fk'];
+        }
+
+        return $post_ids;
+    }
+
+    /**
      * @return int[] An list of deleted post ids
      */
     public function deletePostTree(array $a_node): array
@@ -1474,9 +1500,8 @@ class ilForum
      */
     private function deletePostFiles(array $a_ids): void
     {
-        $forumFiles = new ilFileDataForum($this->getForumId());
         foreach ($a_ids as $pos_id) {
-            $forumFiles->setPosId($pos_id);
+            $forumFiles = new ilFileDataForum($this->getForumId(), $pos_id);
             $files = $forumFiles->getFilesOfPost();
             foreach ($files as $file) {
                 $forumFiles->unlinkFile($file['name']);

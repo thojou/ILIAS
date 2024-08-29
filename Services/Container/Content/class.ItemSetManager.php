@@ -42,6 +42,7 @@ class ItemSetManager
     protected array $rendered = [];
     protected int $mode = self::FLAT;
     protected ?\ilContainerUserFilter $user_filter = null;
+    protected bool $initialised = false;
 
     /**
      * @param int $mode self::TREE|self::FLAT|self::SINGLE
@@ -81,6 +82,9 @@ class ItemSetManager
      */
     protected function init(): void
     {
+        if ($this->initialised) {
+            return;
+        }
         $tree = $this->domain->repositoryTree();
         if ($this->mode === self::TREE) {
             $this->raw = $tree->getSubTree($tree->getNodeData($this->parent_ref_id));
@@ -92,10 +96,12 @@ class ItemSetManager
         $this->applyUserFilter();
         $this->getCompleteDescriptions();
         $this->applyClassificationFilter();
+        $this->getAdditionalSubItemInformation();
         $this->applySorting();
         $this->groupItems();
         $this->sortSessions();
         $this->preloadAdvancedMDValues();
+        $this->initialised = true;
     }
 
     /**
@@ -184,9 +190,6 @@ class ItemSetManager
                 $type = $object["type"];
             }
 
-            // this will add activation properties
-            $this->addAdditionalSubItemInformation($object);
-
             $new_key = (int) $object["child"];
             $this->rendered[$new_key] = false;
             $this->raw_by_type[$type][$new_key] = $object;
@@ -205,7 +208,14 @@ class ItemSetManager
         }
     }
 
-    protected function addAdditionalSubItemInformation(array &$object): void
+    protected function getAdditionalSubItemInformation(): void
+    {
+        foreach ($this->raw as $key => $object) {
+            $this->addAdditionalSubItemInformationToObject($this->raw[$key]);
+        }
+    }
+
+    protected function addAdditionalSubItemInformationToObject(array &$object): void
     {
         \ilObjectActivation::addAdditionalSubItemInformation($object);
     }
@@ -295,7 +305,7 @@ class ItemSetManager
                                 true
                             );
                         }
-                        $this->raw[$key]["description"] = $long_desc[$object["obj_id"]];
+                        $this->raw[$key]["description"] = $long_desc[$object["obj_id"]] ?? '';
                     }
                 }
             }

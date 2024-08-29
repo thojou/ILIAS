@@ -229,7 +229,7 @@ class ilSCTreeTasksGUI extends ilSCComponentTaskGUI
         $tasks = new ilSCTreeTasks($this->getTask());
 
         if ($this->tree->getTreeImplementation() instanceof ilMaterializedPathTree) {
-            ilMaterializedPathTree::createFromParentReleation($this->db);
+            ilMaterializedPathTree::createFromParentRelation($this->db);
         } elseif ($this->tree->getTreeImplementation() instanceof ilNestedSetTree) {
             $this->tree->renumber(ROOT_FOLDER_ID);
         }
@@ -252,7 +252,7 @@ class ilSCTreeTasksGUI extends ilSCComponentTaskGUI
             $this->tpl->setOnScreenMessage('failure', $this->getLang()->txt('sysc_tree_list_failures') . ' ' . $errors_count, true);
         } else {
             $this->getTask()->setStatus(ilSCTask::STATUS_COMPLETED);
-            $this->tpl->setOnScreenMessage('failure', $this->getLang()->txt('sysc_message_success'), true);
+            $this->tpl->setOnScreenMessage('success', $this->getLang()->txt('sysc_message_success'), true);
         }
 
         $this->getTask()->setLastUpdate(new ilDateTime(time(), IL_CAL_UNIX));

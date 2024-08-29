@@ -21,11 +21,12 @@ require_once './Modules/Test/classes/inc.AssessmentConstants.php';
 use ILIAS\DI\RBACServices;
 use ILIAS\Taxonomy\Service;
 use Psr\Http\Message\ServerRequestInterface as HttpRequest;
-use ILIAS\DI\UIServices as UIServices;
 use ILIAS\TestQuestionPool\QuestionInfoService as QuestionInfoService;
 use ILIAS\UI\URLBuilder;
 use ILIAS\UI\URLBuilderToken;
 use ILIAS\Data\Factory as DataFactory;
+use ILIAS\GlobalScreen\Services as GlobalScreen;
+use ILIAS\HTTP\Services as HTTPServices;
 
 /**
  * Class ilObjQuestionPoolGUI
@@ -52,9 +53,10 @@ use ILIAS\Data\Factory as DataFactory;
  */
 class ilObjQuestionPoolGUI extends ilObjectGUI implements ilCtrlBaseClassInterface
 {
-    private ilObjectCommonSettings $common_settings;
+    private HTTPServices $http;
     private HttpRequest $http_request;
     private QuestionInfoService $questioninfo;
+    private \ILIAS\Filesystem\Util\Archive\LegacyArchives $archives;
     protected Service $taxonomy;
     public ?ilObject $object;
     protected ILIAS\TestQuestionPool\InternalRequestService $qplrequest;
@@ -62,6 +64,7 @@ class ilObjQuestionPoolGUI extends ilObjectGUI implements ilCtrlBaseClassInterfa
     protected RBACServices $rbac;
     protected ilComponentLogger $log;
     protected ilHelpGUI $help;
+    protected GlobalScreen $global_screen;
     protected ilComponentFactory $component_factory;
     protected ilComponentRepository $component_repository;
     protected ilNavigationHistory $navigation_history;
@@ -81,6 +84,7 @@ class ilObjQuestionPoolGUI extends ilObjectGUI implements ilCtrlBaseClassInterfa
         $this->rbac = $DIC->rbac();
         $this->log = $DIC['ilLog'];
         $this->help = $DIC['ilHelp'];
+        $this->global_screen = $DIC['global_screen'];
         $this->component_factory = $DIC['component.factory'];
         $this->component_repository = $DIC['component.repository'];
         $this->navigation_history = $DIC['ilNavigationHistory'];
@@ -88,8 +92,10 @@ class ilObjQuestionPoolGUI extends ilObjectGUI implements ilCtrlBaseClassInterfa
         $this->questioninfo = $DIC->testQuestionPool()->questionInfo();
         $this->qplrequest = $DIC->testQuestionPool()->internal()->request();
         $this->taxonomy = $DIC->taxonomy();
-        $this->http_request = $DIC->http()->request();
+        $this->http = $DIC->http();
+        $this->http_request = $this->http->request();
         $this->data_factory = new DataFactory();
+        $this->archives = $DIC->legacyArchives();
         parent::__construct('', $this->qplrequest->raw('ref_id'), true, false);
 
         $this->ctrl->saveParameter($this, [
@@ -231,7 +237,10 @@ class ilObjQuestionPoolGUI extends ilObjectGUI implements ilCtrlBaseClassInterfa
                     $this->lng,
                     $ilDB,
                     $ilUser,
-                    $randomGroup
+                    $randomGroup,
+                    $this->global_screen,
+                    $this->http,
+                    $this->refinery
                 );
 
                 $gui->initQuestion((int) $this->qplrequest->raw('q_id'), $this->object->getId());
@@ -443,6 +452,7 @@ class ilObjQuestionPoolGUI extends ilObjectGUI implements ilCtrlBaseClassInterfa
                 $forwarder = new ilObjQuestionPoolTaxonomyEditingCommandForwarder(
                     $this->object,
                     $ilDB,
+                    $this->refinery,
                     $component_repository,
                     $ilCtrl,
                     $ilTabs,
@@ -459,6 +469,7 @@ class ilObjQuestionPoolGUI extends ilObjectGUI implements ilCtrlBaseClassInterfa
                 $gui = new ilQuestionPoolSkillAdministrationGUI(
                     $ilias,
                     $ilCtrl,
+                    $this->refinery,
                     $ilAccess,
                     $ilTabs,
                     $tpl,
@@ -488,7 +499,10 @@ class ilObjQuestionPoolGUI extends ilObjectGUI implements ilCtrlBaseClassInterfa
                         $this->tpl->setOnScreenMessage('failure', $this->lng->txt('msg_no_questions_selected'), true);
                         $this->ctrl->redirect($this, 'questions');
                     }
-                    if (! is_array($ids)) {
+                    if ($ids[0] === 'ALL_OBJECTS') {
+                        $ids = $this->object->getAllQuestionIds();
+                    }
+                    if (!is_array($ids)) {
                         $ids = explode(',', $ids);
                     }
                     $ids = array_map('intval', $ids);
@@ -551,6 +565,7 @@ class ilObjQuestionPoolGUI extends ilObjectGUI implements ilCtrlBaseClassInterfa
                             );
                             echo ''
                                 . '<script>'
+                                . ' event = new Event("click");'
                                 . ilCommentGUI::getListCommentsJSCall($ajax_hash)
                                 . '</script>'
                             ;
@@ -715,7 +730,7 @@ class ilObjQuestionPoolGUI extends ilObjectGUI implements ilCtrlBaseClassInterfa
             $qti_file = $full_path;
             ilObjTest::_setImportDirectory($basedir);
         } else {
-            ilFileUtils::unzip($full_path);
+            $this->archives->unzip($full_path);
 
             $subdir = basename($file['basename'], '.' . $file['extension']);
             ilObjQuestionPool::_setImportDirectory($basedir);
@@ -839,8 +854,9 @@ class ilObjQuestionPoolGUI extends ilObjectGUI implements ilCtrlBaseClassInterfa
         }
         $table->setData($rows);
 
-        $this->tpl->setCurrentBlock('import_qpl');
-        if (is_file($xml_file)) {
+        if (is_file($xml_file)
+            && !$questions_only) {
+            $this->tpl->setCurrentBlock("import_qpl");
             try {
                 $fh = fopen($xml_file, 'r');
                 $xml = fread($fh, filesize($xml_file));
@@ -851,9 +867,10 @@ class ilObjQuestionPoolGUI extends ilObjectGUI implements ilCtrlBaseClassInterfa
             if (preg_match('/<ContentObject.*?MetaData.*?General.*?Title[^>]*?>([^<]*?)</', $xml, $matches)) {
                 $this->tpl->setVariable('VALUE_NEW_QUESTIONPOOL', $matches[1]);
             }
+
+            $this->tpl->setVariable("TEXT_CREATE_NEW_QUESTIONPOOL", $this->lng->txt("qpl_import_create_new_qpl"));
+            $this->tpl->parseCurrentBlock();
         }
-        $this->tpl->setVariable('TEXT_CREATE_NEW_QUESTIONPOOL', $this->lng->txt('qpl_import_create_new_qpl'));
-        $this->tpl->parseCurrentBlock();
 
         $this->tpl->setCurrentBlock('adm_content');
         $this->tpl->setVariable('FOUND_QUESTIONS_INTRODUCTION', $this->lng->txt('qpl_import_verify_found_questions'));
@@ -903,8 +920,12 @@ class ilObjQuestionPoolGUI extends ilObjectGUI implements ilCtrlBaseClassInterfa
 
     public function importVerifiedFileObject(): void
     {
-        if ($_POST['questions_only'] == 1) {
-            $newObj = &$this->object;
+        $title = '';
+        $description = null;
+        if ($this->qplrequest->int('questions_only') === 1) {
+            $newObj = $this->object;
+            $title = $this->object->getTitle();
+            $description = $this->object->getDescription();
         } else {
             $newObj = new ilObjQuestionPool(0, true);
             $newObj->setType($this->qplrequest->raw('new_type'));
@@ -914,6 +935,8 @@ class ilObjQuestionPoolGUI extends ilObjectGUI implements ilCtrlBaseClassInterfa
             $newObj->createReference();
             $newObj->putInTree($this->qplrequest->getRefId());
             $newObj->setPermissions($this->qplrequest->getRefId());
+
+            $title = $this->qplrequest->raw('qpl_new');
         }
 
         if (is_string(ilSession::get("qpl_import_dir")) && is_string(ilSession::get("qpl_import_subdir")) && is_file(
@@ -948,9 +971,12 @@ class ilObjQuestionPoolGUI extends ilObjectGUI implements ilCtrlBaseClassInterfa
                 $newObj->fromXML(ilSession::get('qpl_import_xml_file'));
             }
 
-            // set another question pool name (if possible)
-            if (isset($_POST['qpl_new']) && strlen($_POST['qpl_new'])) {
-                $newObj->setTitle($_POST['qpl_new']);
+            if ($title !== '') {
+                $newObj->setTitle($title);
+            }
+
+            if ($description !== null) {
+                $newObj->setDescription($description);
             }
 
             $newObj->update();
@@ -1266,6 +1292,7 @@ class ilObjQuestionPoolGUI extends ilObjectGUI implements ilCtrlBaseClassInterfa
             );
         }
 
+        $this->tpl->setPermanentLink($this->object->getType(), $this->object->getRefId());
         $out[] = $this->getTable();
         $this->tpl->setContent(implode('', $out));
     }
@@ -1534,14 +1561,21 @@ class ilObjQuestionPoolGUI extends ilObjectGUI implements ilCtrlBaseClassInterfa
             $q_gui = assQuestionGUI::_getQuestionGUI('', $this->qplrequest->getQuestionId());
             if ($q_gui->object instanceof assQuestion) {
                 $q_gui->object->setObjId($this->object->getId());
-                $title = $q_gui->object->getTitle();
+                $title = $this->object->getTitle() . ': ' . $q_gui->object->getTitle();
                 if (!$title) {
                     $title = $this->lng->txt('new') . ': ' . $this->questioninfo->getQuestionTypeName(
                         $q_gui->object->getId()
                     );
                 }
-                $this->tpl->setTitle($title);
-                $this->tpl->setDescription($q_gui->object->getComment());
+                $this->tpl->setTitle(
+                    strip_tags(
+                        $title,
+                        self::ALLOWED_TAGS_IN_TITLE_AND_DESCRIPTION
+                    )
+                );
+                $this->tpl->setDescription(
+                    $q_gui->object->getDescriptionForHTMLOutput()
+                );
                 $this->tpl->setTitleIcon(ilObject2::_getIcon($this->object->getId(), 'big', $this->object->getType()));
             } else {
                 // Workaround for context issues: If no object was found, redirect without q_id parameter
@@ -1549,8 +1583,18 @@ class ilObjQuestionPoolGUI extends ilObjectGUI implements ilCtrlBaseClassInterfa
                 $this->ctrl->redirect($this);
             }
         } else {
-            $this->tpl->setTitle($this->object->getTitle());
-            $this->tpl->setDescription($this->object->getLongDescription());
+            $this->tpl->setTitle(
+                strip_tags(
+                    $this->object->getTitle(),
+                    self::ALLOWED_TAGS_IN_TITLE_AND_DESCRIPTION
+                )
+            );
+            $this->tpl->setDescription(
+                strip_tags(
+                    $this->object->getLongDescription(),
+                    self::ALLOWED_TAGS_IN_TITLE_AND_DESCRIPTION
+                )
+            );
             $this->tpl->setTitleIcon(ilObject2::_getIcon($this->object->getId(), 'big', $this->object->getType()));
         }
     }
@@ -1848,6 +1892,7 @@ class ilObjQuestionPoolGUI extends ilObjectGUI implements ilCtrlBaseClassInterfa
             $f,
             $r,
             $this->data_factory,
+            $this->refinery,
             $this->url_builder,
             $this->action_parameter_token,
             $this->row_id_token,
@@ -1855,10 +1900,10 @@ class ilObjQuestionPoolGUI extends ilObjectGUI implements ilCtrlBaseClassInterfa
             $this->lng,
             $this->component_repository,
             $this->rbac_system,
-            $this->taxonomy->domain(),
+            $this->object->getShowTaxonomies() ? $this->taxonomy->domain() : null,
             $this->notes_service,
             $this->object->getId(),
-            (int)$this->qplrequest->getRefId()
+            (int) $this->qplrequest->getRefId()
         );
 
         /**
@@ -1869,22 +1914,25 @@ class ilObjQuestionPoolGUI extends ilObjectGUI implements ilCtrlBaseClassInterfa
         $filter = $table->getFilter($this->ui_service, $filter_action);
 
         $filter_params = $this->ui_service->filter()->getData($filter);
+
         if ($filter_params) {
             foreach (array_filter($filter_params) as $item => $value) {
 
                 switch ($item) {
                     case 'taxonomies':
-                        if($value === 'null') {
-                            $table->addTaxonomyFilterNoTaxonomySet(true);
-                        } else {
-                            $tax_nodes = explode('-', $value);
-                            $tax_id = array_shift($tax_nodes);
-                            $table->addTaxonomyFilter(
-                                $tax_id,
-                                $tax_nodes,
-                                $this->object->getId(),
-                                $this->object->getType()
-                            );
+                        foreach($value as $tax_value) {
+                            if($tax_value === 'null') {
+                                $table->addTaxonomyFilterNoTaxonomySet(true);
+                            } else {
+                                $tax_nodes = explode('-', $tax_value);
+                                $tax_id = array_shift($tax_nodes);
+                                $table->addTaxonomyFilter(
+                                    $tax_id,
+                                    $tax_nodes,
+                                    $this->object->getId(),
+                                    $this->object->getType()
+                                );
+                            }
                         }
                         break;
                     case 'commented':

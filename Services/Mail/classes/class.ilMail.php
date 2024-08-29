@@ -979,12 +979,13 @@ class ilMail
     ): array {
         global $DIC;
 
-        $this->logger->debug(
+        $this->logger->info(
             "New mail system task:" .
             " To: " . $a_rcp_to .
             " | CC: " . $a_rcp_cc .
             " | BCC: " . $a_rcp_bcc .
-            " | Subject: " . $a_m_subject
+            " | Subject: " . $a_m_subject .
+            " | Attachments: " . print_r($a_attachment, true)
         );
 
         if ($a_attachment && !$this->mail_file_data->checkFilesExist($a_attachment)) {
@@ -1133,6 +1134,16 @@ class ilMail
 
         if (!$this->getSaveInSentbox()) {
             $this->deleteMails([$internalMessageId]);
+        }
+
+        if ($this->isSystemMail()) {
+            $random = new ilRandom();
+            if ($random->int(0, 50) === 2) {
+                (new ilMailAttachmentStageCleanup(
+                    $this->logger,
+                    $this->mail_file_data
+                ))->run();
+            }
         }
 
         return array_values($errors);

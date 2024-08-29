@@ -43,10 +43,9 @@ class ilLDAPQuery
     private array $users = [];
 
     /**
-     * LDAP Handle
-     * @var resource
+     * @var false|resource|\LDAP\Connection
      */
-    private $lh;
+    private $lh = false;
 
     /**
      * @throws ilLDAPQueryException
@@ -202,11 +201,16 @@ class ilLDAPQuery
         $this->logger->info('Found ' . $tmp_result->numRows() . ' users.');
         $attribute = strtolower($this->settings->getUserAttribute());
         foreach ($tmp_result->getRows() as $data) {
-            if (isset($data[$attribute])) {
-                $this->readUserData($data[$attribute]);
-            } else {
-                $this->logger->warning('Unknown error. No user attribute found.');
+            if (isset($data[$attribute]) && is_scalar($data[$attribute]) && (string) $data[$attribute] !== '') {
+                $this->readUserData((string) $data[$attribute]);
+                continue;
             }
+
+            $this->logger->warning(sprintf(
+                'Unknown error. No or invalid value found for attribute %s: %s',
+                $this->settings->getUserAttribute(),
+                var_export($data[$attribute] ?? null, true)
+            ));
         }
         unset($tmp_result);
     }
@@ -425,18 +429,39 @@ class ilLDAPQuery
             return;
         }
 
-        $attribute_name = strtolower($this->settings->getGroupMember());
+        /**
+         * @param list<string> $members
+         */
+        $readUserData = function (array $members): void {
+            if ($members === []) {
+                $this->logger->warning(sprintf(
+                    'No valid member values found for group member attribute: %s',
+                    $this->settings->getGroupMember()
+                ));
+                return;
+            }
+
+            foreach ($members as $member) {
+                $this->readUserData($member, true, true);
+            }
+        };
 
         // All groups
+        $attribute_name = strtolower($this->settings->getGroupMember());
         foreach ($group_data as $data) {
-            if (is_array($data[$attribute_name])) {
-                $this->logger->debug('Found ' . count($data[$attribute_name]) . ' group members for group ' . $data['dn']);
-                foreach ($data[$attribute_name] as $name) {
-                    $this->readUserData($name, true, true);
+            $members = [];
+            if (isset($data[$attribute_name])) {
+                if (is_array($data[$attribute_name])) {
+                    $members = array_map('strval', array_filter($data[$attribute_name]));
+                    $this->logger->debug('Found ' . count($members) . ' group members for group ' . $data['dn']);
+                } elseif (is_scalar($data[$attribute_name]) && (string) $data[$attribute_name] !== '') {
+                    $members = [
+                        (string) $data[$attribute_name]
+                    ];
                 }
-            } else {
-                $this->readUserData($data[$attribute_name], true, true);
             }
+
+            $readUserData($members);
         }
         unset($tmp_result);
     }
@@ -491,11 +516,15 @@ class ilLDAPQuery
                 return false;
             }
 
-            $account = $user_data[strtolower($this->settings->getUserAttribute())];
+            $account = $user_data[strtolower($this->settings->getUserAttribute())] ?? '';
             if (is_array($account)) {
-                $user_ext = strtolower(array_shift($account));
-            } else {
-                $user_ext = strtolower($account);
+                $account = array_shift($account) ?? '';
+            }
+
+            $user_ext = strtolower((string) $account);
+            if ($user_ext === '') {
+                $this->logger->notice('LDAP: Could not find user attribute ' . $this->settings->getUserAttribute() . '.');
+                return false;
             }
 
             // auth mode depends on ldap server settings
@@ -511,29 +540,77 @@ class ilLDAPQuery
      * IL_SCOPE_SUB => ldap_search
      * IL_SCOPE_ONE => ldap_list
      * @param array|null $controls LDAP Control to be passed on the the ldap functions
-     * @return resource|null
+     * @return null|false|resource|list<\LDAP\Result>|\LDAP\Result
      */
-    private function queryByScope(int $a_scope, string $a_base_dn, string $a_filter, array $a_attributes, array $controls = null)
-    {
+    private function queryByScope(
+        int $a_scope,
+        string $a_base_dn,
+        string $a_filter,
+        array $a_attributes,
+        array $controls = null
+    ) {
         $a_filter = $a_filter ?: "(objectclass=*)";
 
-        switch ($a_scope) {
-            case ilLDAPServer::LDAP_SCOPE_SUB:
-                $res = ldap_search($this->lh, $a_base_dn, $a_filter, $a_attributes, 0, 0, 0, LDAP_DEREF_NEVER, $controls);
-                break;
+        set_error_handler(static function (int $severity, string $message, string $file, int $line): void {
+            throw new ErrorException($message, $severity, $severity, $file, $line);
+        });
 
-            case ilLDAPServer::LDAP_SCOPE_ONE:
-                $res = ldap_list($this->lh, $a_base_dn, $a_filter, $a_attributes, 0, 0, 0, LDAP_DEREF_NEVER, $controls);
-                break;
+        $result = null; // We should ensure the similar behaviour of using the @ operator in PHP < 8.x
 
-            case ilLDAPServer::LDAP_SCOPE_BASE:
-                $res = ldap_read($this->lh, $a_base_dn, $a_filter, $a_attributes, 0, 0, 0, LDAP_DEREF_NEVER, $controls);
-                break;
+        try {
+            switch ($a_scope) {
+                case ilLDAPServer::LDAP_SCOPE_SUB:
+                    $result = ldap_search(
+                        $this->lh,
+                        $a_base_dn,
+                        $a_filter,
+                        $a_attributes,
+                        0,
+                        0,
+                        0,
+                        LDAP_DEREF_NEVER,
+                        $controls
+                    );
+                    break;
 
-            default:
-                throw new ilLDAPUndefinedScopeException(
-                    "Undefined LDAP Search Scope: " . $a_scope
-                );
+                case ilLDAPServer::LDAP_SCOPE_ONE:
+                    $result = ldap_list(
+                        $this->lh,
+                        $a_base_dn,
+                        $a_filter,
+                        $a_attributes,
+                        0,
+                        0,
+                        0,
+                        LDAP_DEREF_NEVER,
+                        $controls
+                    );
+                    break;
+
+                case ilLDAPServer::LDAP_SCOPE_BASE:
+                    $result = ldap_read(
+                        $this->lh,
+                        $a_base_dn,
+                        $a_filter,
+                        $a_attributes,
+                        0,
+                        0,
+                        0,
+                        LDAP_DEREF_NEVER,
+                        $controls
+                    );
+                    break;
+
+                default:
+                    throw new ilLDAPUndefinedScopeException(
+                        "Undefined LDAP Search Scope: " . $a_scope
+                    );
+            }
+        } catch (ErrorException $e) {
+            $this->logger->warning($e->getMessage());
+            $this->logger->warning($e->getTraceAsString());
+        } finally {
+            restore_error_handler();
         }
 
         $error = ldap_errno($this->lh);
@@ -543,7 +620,7 @@ class ilLDAPQuery
             $this->logger->warning('Filter: ' . $a_filter);
         }
 
-        return $res ?? null;
+        return $result;
     }
 
     /**

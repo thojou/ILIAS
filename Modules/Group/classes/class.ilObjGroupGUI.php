@@ -399,7 +399,8 @@ class ilObjGroupGUI extends ilContainerGUI
                 // check read permission
                 if ((!$this->getCreationMode()
                     && !$this->rbacsystem->checkAccess('read', $this->object->getRefId()) && $cmd != 'infoScreen')
-                    || $cmd == 'join') {
+                    || $cmd == 'join'
+                    || $cmd === 'leaveWaitList') {
                     // no join permission -> redirect to info screen
                     if (!$this->rbacsystem->checkAccess('join', $this->object->getRefId())) {
                         $this->ctrl->redirect($this, "infoScreen");
@@ -418,6 +419,18 @@ class ilObjGroupGUI extends ilContainerGUI
         if ($header_action) {
             $this->addHeaderAction();
         }
+    }
+
+    public function enableAdministrationPanelObject(): void
+    {
+        $this->getModeManager()->setAdminMode();
+        $this->ctrl->redirect($this, "");
+    }
+
+    public function disableAdministrationPanelObject(): void
+    {
+        $this->getModeManager()->setContentMode();
+        $this->ctrl->redirect($this, "");
     }
 
     /**
@@ -652,6 +665,9 @@ class ilObjGroupGUI extends ilContainerGUI
                     break;
             }
 
+            // update object settings
+            $this->object->update();
+
             // title icon visibility
             $obj_service->commonSettings()->legacyForm($form, $this->object)->saveTitleIconVisibility();
 
@@ -666,10 +682,6 @@ class ilObjGroupGUI extends ilContainerGUI
 
             // list presentation
             $this->saveListPresentation($form);
-
-            // update object settings
-            $this->object->update();
-
 
             ilObjectServiceSettingsGUI::updateServiceSettingsForm(
                 $this->object->getId(),
@@ -1594,6 +1606,8 @@ class ilObjGroupGUI extends ilContainerGUI
                 $wait->setValue('2');
             } elseif ($this->object->isWaitingListEnabled()) {
                 $wait->setValue('1');
+            } else {
+                $wait->setValue('0');
             }
 
             $lim->addSubItem($wait);

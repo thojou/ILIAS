@@ -38,7 +38,7 @@ class Consumers
     private ConsumerFactory $consumer_factory;
     private ResourceBuilder $resource_builder;
     private CollectionBuilder $collection_builder;
-    private ?SrcBuilder $src_builder = null;
+    private SrcBuilder $src_builder;
 
     /**
      * Consumers constructor.
@@ -135,7 +135,7 @@ class Consumers
         return $this->consumer_factory->containerURI(
             $resource,
             $this->src_builder,
-            $start_file,
+            ltrim($start_file, '/'),
             $valid_for_at_least_minutes
         );
     }

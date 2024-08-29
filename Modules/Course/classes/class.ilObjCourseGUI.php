@@ -785,9 +785,6 @@ class ilObjCourseGUI extends ilContainerGUI
             $crs_period->getEnd()
         );
 
-        // activation/online
-        $this->object->setOfflineStatus(!$form->getInput('activation_online'));
-
         // activation period
         $period = $form->getItemByPostVar("access_period");
         if ($period->getStart() && $period->getEnd()) {
@@ -855,6 +852,10 @@ class ilObjCourseGUI extends ilContainerGUI
                 break;
         }
         $this->object->handleAutoFill();
+
+        $property_online = $this->object->getObjectProperties()->getPropertyIsOnline();
+        $online = $form->getInput('activation_online') ? $property_online->withOnline() : $property_online->withOffline();
+        $this->object->getObjectProperties()->storePropertyIsOnline($online);
 
         $obj_service->commonSettings()->legacyForm($form, $this->object)->saveTitleIconVisibility();
         $obj_service->commonSettings()->legacyForm($form, $this->object)->saveTopActionsVisibility();
@@ -1095,7 +1096,7 @@ class ilObjCourseGUI extends ilContainerGUI
         $reg_proc->setValue(
             ($this->object->getSubscriptionLimitationType() != ilCourseConstants::IL_CRS_SUBSCRIPTION_DEACTIVATED)
                 ? (string) $this->object->getSubscriptionType()
-                : (string) ilCourseConstants::IL_CRS_SUBSCRIPTION_DEACTIVATED
+                : (string) ilCourseConstants::IL_CRS_SUBSCRIPTION_DIRECT
         );
 
         $opt = new ilRadioOption(
@@ -1256,7 +1257,7 @@ class ilObjCourseGUI extends ilContainerGUI
         $form = $obj_service->commonSettings()->legacyForm($form, $this->object)->addTopActionsVisibility();
 
         // breadcrumbs
-        if ($setting->get("rep_breadcr_crs_overwrite")) {
+        if ($setting->get("rep_breadcr_crs") && $setting->get("rep_breadcr_crs_overwrite")) {
             $add = $setting->get("rep_breadcr_crs_default")
                 ? " (" . $this->lng->txt("crs_breadcrumb_crs_only") . ")"
                 : " (" . $this->lng->txt("crs_breadcrumb_full_path") . ")";
@@ -2394,6 +2395,9 @@ class ilObjCourseGUI extends ilContainerGUI
                 break;
 
             case "ilnewstimelinegui":
+                if (!$this->__checkStartObjects()) {    // see #37236
+                    $this->ctrl->redirectByClass(self::class, "view");
+                }
                 $this->tabs_gui->setTabActive('news_timeline');
                 $t = ilNewsTimelineGUI::getInstance(
                     $this->object->getRefId(),
@@ -2468,7 +2472,8 @@ class ilObjCourseGUI extends ilContainerGUI
                     && $cmd !== 'leave'
                     && !$this->access->checkAccess("read", '', $this->object->getRefId())
                     || $cmd == 'join'
-                    || $cmd == 'subscribe') {
+                    || $cmd == 'subscribe'
+                    || $cmd === 'leaveWaitList') {
                     if ($this->rbac_system->checkAccess('join', $this->object->getRefId()) &&
                         !ilCourseParticipants::_isParticipant($this->object->getRefId(), $this->user->getId())) {
                         $this->ctrl->redirectByClass("ilCourseRegistrationGUI");
@@ -2832,21 +2837,6 @@ class ilObjCourseGUI extends ilContainerGUI
             return false;
         }
         return true;
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function prepareOutput(bool $show_subobjects = true): bool
-    {
-        if (!$this->getCreationMode()) {
-            $settings = ilMemberViewSettings::getInstance();
-            if ($settings->isActive() && $settings->getContainer() != $this->object->getRefId()) {
-                $settings->setContainer($this->object->getRefId());
-                $this->rbac_system->initMemberView();
-            }
-        }
-        return parent::prepareOutput($show_subobjects);
     }
 
     /**

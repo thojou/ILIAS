@@ -141,6 +141,10 @@ class ilStartUpGUI implements ilCtrlBaseClassInterface, ilCtrlSecurityInterface
                 $this->ctrl->forwardCommand(new ilPasswordAssistanceGUI());
                 return;
 
+            case strtolower(ilAccessibilityControlConceptGUI::class):
+                $this->ctrl->forwardCommand(new ilAccessibilityControlConceptGUI());
+                return;
+
             default:
                 if (method_exists($this, $cmd)) {
                     $this->$cmd();
@@ -1049,7 +1053,8 @@ class ilStartUpGUI implements ilCtrlBaseClassInterface, ilCtrlSecurityInterface
                 '[list-login-form]',
                 '[list-cas-login-form]',
                 '[list-saml-login]',
-                '[list-shibboleth-login-form]'
+                '[list-shibboleth-login-form]',
+                '[list-openid-connect-login]'
             ],
             '',
             $page_editor_html
@@ -1238,7 +1243,7 @@ class ilStartUpGUI implements ilCtrlBaseClassInterface, ilCtrlSecurityInterface
                 // no break
             default:
                 $this->getLogger()->info('Account migration failed for user ' . $username);
-                $this->showAccountMigration($GLOBALS['lng']->txt('err_wrong_login'));
+                $this->showAccountMigration(null, $GLOBALS['lng']->txt('err_wrong_login'));
         }
     }
 
@@ -1500,6 +1505,8 @@ class ilStartUpGUI implements ilCtrlBaseClassInterface, ilCtrlSecurityInterface
 
     private function confirmRegistration(): void
     {
+        $this->lng->loadLanguageModule('registration');
+
         ilUtil::setCookie('iltest', 'cookie', false);
         $regitration_hash = trim($this->http->wrapper()->query()->retrieve(
             'rh',
@@ -1861,6 +1868,8 @@ class ilStartUpGUI implements ilCtrlBaseClassInterface, ilCtrlSecurityInterface
 
         if ($target) {
             $credentials->setReturnTo($target);
+        } else {
+            $target = $credentials->getReturnTo();
         }
 
         $status = ilAuthStatus::getInstance();

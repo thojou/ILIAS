@@ -1480,4 +1480,60 @@ class ilUtil
 
         return $result;
     }
+    // seminar-patch: begin
+    /** @var array<string, array<string, array<string, array<string, bool>>>> */
+    private static array $activePluginsCheckCache = [];
+    /** @var array<string, array<string, array<string, array<string, ilPlugin>>>> */
+    private static array $activePluginsCache = [];
+
+    public static function hasActivePlugin(string $type, string $component, string $slot, string $plugin_class): bool
+    {
+        global $DIC;
+
+        if (isset(self::$activePluginsCheckCache[$type][$component][$slot][$plugin_class])) {
+            return self::$activePluginsCheckCache[$type][$component][$slot][$plugin_class];
+        }
+
+        /** @var ilComponentRepository $component_repository */
+        $component_repository = $DIC['component.repository'];
+
+        $has_plugin = $component_repository->getComponentByTypeAndName(
+            $type,
+            $component
+        )->getPluginSlotById($slot)->hasPluginName($plugin_class);
+
+        if ($has_plugin) {
+            $plugin_info = $component_repository->getComponentByTypeAndName(
+                $type,
+                $component
+            )->getPluginSlotById($slot)->getPluginByName($plugin_class);
+            $has_plugin = $plugin_info->isActive();
+        }
+
+        return (self::$activePluginsCheckCache[$type][$component][$slot][$plugin_class] = $has_plugin);
+    }
+
+    public static function getPlugin(string $type, string $component, string $slot, string $plugin_class): ilPlugin
+    {
+        global $DIC;
+
+        if (isset(self::$activePluginsCache[$type][$component][$slot][$plugin_class])) {
+            return self::$activePluginsCache[$type][$component][$slot][$plugin_class];
+        }
+
+        /** @var ilComponentRepository $component_repository */
+        $component_repository = $DIC['component.repository'];
+        /** @var ilComponentFactory $component_factory */
+        $component_factory = $DIC['component.factory'];
+
+        $plugin_info = $component_repository->getComponentByTypeAndName(
+            $type,
+            $component
+        )->getPluginSlotById($slot)->getPluginByName($plugin_class);
+
+        $plugin = $component_factory->getPlugin($plugin_info->getId());
+
+        return (self::$activePluginsCache[$type][$component][$slot][$plugin_class] = $plugin);
+    }
+    // seminar-patch: end
 }

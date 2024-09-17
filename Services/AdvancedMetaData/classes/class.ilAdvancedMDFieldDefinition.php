@@ -1012,7 +1012,9 @@ abstract class ilAdvancedMDFieldDefinition
         return $res;
     }
 
-    public function searchSubObjects(ilADTSearchBridge $a_adt_search, int $a_obj_id, string $sub_obj_type): array
+    // seminar-patch: begin
+    public function searchSubObjects(ilADTSearchBridge $a_adt_search, ?int $a_obj_id = null, ?string $sub_obj_type = null): array
+    // seminar-patch: end
     {
         $element_id = ilADTActiveRecordByType::SINGLE_COLUMN_NAME;
 
@@ -1032,10 +1034,12 @@ abstract class ilAdvancedMDFieldDefinition
             if (sizeof($objects)) {
                 $res = array();
                 foreach ($objects as $item) {
-                    if ($item["obj_id"] == $a_obj_id &&
-                        $item["sub_type"] == $sub_obj_type) {
+                    // seminar-patch: begin
+                    if ((!$a_obj_id || $item["obj_id"] == $a_obj_id) &&
+                        (!$sub_obj_type || $item["sub_type"] == $sub_obj_type)) {
                         $res[] = $item["sub_id"];
                     }
+                    // seminar-patch: end
                 }
                 return $res;
             }

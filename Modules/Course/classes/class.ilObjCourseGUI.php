@@ -91,10 +91,13 @@ class ilObjCourseGUI extends ilContainerGUI
     {
         $part = ilCourseParticipants::_getInstanceByObjId($new_object->getId());
         $part->add($this->user->getId(), ilCourseConstants::CRS_ADMIN);
-        $part->updateNotification(
+        // seminar-patch: begin
+        /*$part->updateNotification(
             $this->user->getId(),
             (bool) $this->settings->get('mail_crs_admin_notification', '1')
-        );
+        );*/
+        $part->updateNotification($this->user->getId(), true);
+        // seminar-patch: end
         parent::afterImport($new_object);
     }
 
@@ -206,6 +209,9 @@ class ilObjCourseGUI extends ilContainerGUI
         $files = ilCourseFile::_readFilesByCourse($this->object->getId());
 
         $info = new ilInfoScreenGUI($this);
+        // seminar-patch: begin
+        $info->suppress_object_info = true;
+        // seminar-patch: end
         $info->enablePrivateNotes();
         $info->enableFeedback();
         $info->enableNews();
@@ -360,6 +366,11 @@ class ilObjCourseGUI extends ilContainerGUI
                     case ilCourseConstants::IL_CRS_SUBSCRIPTION_CONFIRMATION:
                         $txt = $this->lng->txt("crs_info_reg_confirmation");
                         break;
+                    // seminar-patch: begin
+                    case ilCourseConstants::IL_CRS_SUBSCRIPTION_WORKFLOW:
+                        $txt = $this->lng->txt("crs_subscription_options_workflow");
+                        break;
+                    // seminar-patch: end
                     case ilCourseConstants::IL_CRS_SUBSCRIPTION_DIRECT:
                         $txt = $this->lng->txt("crs_info_reg_direct");
                         break;
@@ -1116,7 +1127,16 @@ class ilObjCourseGUI extends ilContainerGUI
         );
         $opt->setInfo($this->lng->txt('crs_registration_confirmation_info'));
         $reg_proc->addOption($opt);
-
+        // seminar-patch: begin
+        if (ilUtil::hasActivePlugin('Services', 'UIComponent', 'uihk', 'CourseBooking')) {
+            $opt = new ilRadioOption(
+                $this->lng->txt('crs_subscription_options_workflow'),
+                ilCourseConstants::IL_CRS_SUBSCRIPTION_WORKFLOW
+            );
+            $opt->setInfo($this->lng->txt('crs_subscription_options_workflow_info'));
+            $reg_proc->addOption($opt);
+        }
+        // seminar-patch: end
         $opt_self_enrollment_enabled = new ilRadioOption(
             $this->lng->txt('crs_reg_selfreg'),
             (string) ilCourseConstants::IL_CRS_SUBSCRIPTION_UNLIMITED
@@ -1770,12 +1790,24 @@ class ilObjCourseGUI extends ilContainerGUI
     public function performUnsubscribeObject()
     {
         $this->checkPermission('leave');
+        // seminar-patch: begin
+        if (ilUtil::hasActivePlugin('Services', 'UIComponent', 'uihk', 'CourseBooking')) {
+            ilBookingProcessesUtils::LearnerLeavesWithSillyRemoveMeFromThatAndThatAndThatCourseThingy(
+                $this->user->getId(),
+                $this->ref_id
+            );
+            $this->handleAutoFill();
+        }
+        // seminar-patch: end
         $this->getObject()->getMembersObject()->delete($this->user->getId());
+        // seminar-patch: begin
+        /*
         $this->getObject()->getMembersObject()->sendUnsubscribeNotificationToAdmins($this->user->getId());
         $this->getObject()->getMembersObject()->sendNotification(
             ilCourseMembershipMailNotification::TYPE_UNSUBSCRIBE_MEMBER,
             $this->user->getId()
-        );
+        );*/
+        // seminar-patch: end
         $this->tpl->setOnScreenMessage('success', $this->lng->txt('crs_unsubscribed_from_crs'), true);
 
         $this->ctrl->setParameterByClass("ilrepositorygui", "ref_id", $this->tree->getParentId($this->ref_id));
@@ -3102,4 +3134,36 @@ class ilObjCourseGUI extends ilContainerGUI
     {
         $this->ctrl->setReturn($this, "view");
     }
+    // seminar-patch: begin
+    protected function handleAutoFill(): void
+    {
+        if ($this->object->enabledWaitingList() && $this->object->hasWaitingListAutoFill()) {
+            $max = $this->object->getSubscriptionMaxMembers();
+            $now = ilCourseParticipants::lookupNumberOfMembers($this->object->getRefId());
+            if ($max > $now) {
+                // see assignFromWaitingListObject()
+                $waiting_list = new ilCourseWaitingList($this->object->getId());
+
+                foreach ($waiting_list->getUserIds() as $user_id) {
+                    if (!$tmp_obj = ilObjectFactory::getInstanceByObjId($user_id, false)) {
+                        continue;
+                    }
+                    if ($this->object->getMembersObject()->isAssigned($user_id)) {
+                        continue;
+                    }
+                    $this->object->getMembersObject()->add($user_id, ilParticipants::IL_CRS_MEMBER);
+                    //$this->object->getMembersObject()->sendNotification($this->object->getMembersObject()->NOTIFY_ACCEPT_USER,$user_id);
+                    $waiting_list->removeFromList($user_id);
+
+                    $this->object->checkLPStatusSync($user_id);
+
+                    $now++;
+                    if ($now >= $max) {
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    // seminar-patch: end
 } // END class.ilObjCourseGUI

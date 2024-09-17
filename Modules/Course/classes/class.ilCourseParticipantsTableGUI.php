@@ -481,7 +481,9 @@ class ilCourseParticipantsTableGUI extends ilParticipantTableGUI
             foreach ($data as $usr_id => $fields) {
                 $usr_id = (int) $usr_id;
                 // #7264: as we get data for all course members filter against user data
-                if (!$this->checkAcceptance($usr_id) || !in_array($usr_id, $usr_ids)) {
+                // seminar-patch: begin
+                if (!in_array($usr_id, $usr_ids)) {
+                    // seminar-patch: end
                     continue;
                 }
 

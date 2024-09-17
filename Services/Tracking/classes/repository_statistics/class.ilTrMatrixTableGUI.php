@@ -17,7 +17,10 @@
  *********************************************************************/
 
 declare(strict_types=0);
+//seminar-patch: begin
+use ILIAS\Plugin\CourseBooking\Controller\LearningProgress\LearningProgressCourseController;
 
+//seminar-patch: end
 /**
  * name table
  * @author  Jörg Lützenkirchen <luetzenkirchen@leifos.com>
@@ -162,6 +165,27 @@ class ilTrMatrixTableGUI extends ilLPTableBaseGUI
         }
         $this->setExportFormats(array(self::EXPORT_CSV, self::EXPORT_EXCEL));
     }
+
+    //seminar-patch: begin
+    public function getSelectedColumns() : array
+    {
+        $selected = parent::getSelectedColumns();
+        try {
+            if (ilUtil::hasActivePlugin('Services', 'UIComponent', 'uihk', 'CourseBooking')) {
+                global $DIC;
+                $coreController = new ilCourseBookingUIHookGUI();
+                $coreController->setPluginObject(ilCourseBookingPlugin::getInstance());
+                if (!$coreController->getPluginObject() || !$coreController->getPluginObject()->isActive()) {
+                    return $selected;
+                }
+                $lpCourseController = new LearningProgressCourseController($coreController, $DIC);
+                $selected = $lpCourseController->modifyMatrixViewSelectedColumns($this->ref_id, $selected);
+            }
+        } catch (Throwable $e) {
+        }
+        return $selected;
+    }
+    //seminar-patch: end
 
     public function initFilter(): void
     {

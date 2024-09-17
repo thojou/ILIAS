@@ -202,13 +202,22 @@ class ilLPCollectionSettingsTableGUI extends ilTable2GUI
                             ]
                         );
                     } else {
-                        $lp_settings_link = $this->ctrl->getLinkTargetByClass(
-                            [
-                                ilRepositoryGUI::class,
-                                $gui_class,
-                                ilLearningProgressGUI::class,
-                            ]
-                        );
+                        // seminar-patch: begin
+                        global $DIC;
+
+                        if ($DIC['objDefinition']->isPlugin($a_set['type'])) {
+                            $lp_settings_link = ilLink::_getLink((int) $a_set['ref_id'], $a_set['type'], ['gotolp' => 1]
+                            );
+                        } else {
+                            $lp_settings_link = $this->ctrl->getLinkTargetByClass(
+                                [
+                                    ilRepositoryGUI::class,
+                                    $gui_class,
+                                    ilLearningProgressGUI::class,
+                                ]
+                            );
+                        }
+                        // seminar-patch: end
                     }
 
                     $this->ctrl->clearParameterByClass(

@@ -153,11 +153,24 @@ class ilAdvancedMDRecordGUI
     {
         $this->ref_id = $a_ref_id;
     }
+    // seminar-patch: begin
+    protected bool $form_enable_section_headers = false;
+    /** @var array{"search_whitelist"?: list<int>}|null */
+    protected ?array $form_additional = null;
 
-    public function setPropertyForm(ilPropertyFormGUI $form): void
-    {
+    /**
+     * @param array{"search_whitelist"?: list<int>}|null $a_additional
+     */
+    public function setPropertyForm(
+        ilPropertyFormGUI $form,
+        bool $a_enable_section_headers = true,
+        ?array $a_additional = null
+    ): void {
         $this->form = $form;
+        $this->form_enable_section_headers = $a_enable_section_headers;
+        $this->form_additional = $a_additional;
     }
+    // seminar-patch: end
 
     /**
      * Set values for search form
@@ -357,13 +370,24 @@ class ilAdvancedMDRecordGUI
                 continue;
             }
 
+            // seminar-patch: begin
+            if ($this->form_enable_section_headers) {
             $record_translations = ilAdvancedMDRecordTranslations::getInstanceByRecordId($record->getRecordId());
             $section = new ilFormSectionHeaderGUI();
             $section->setTitle($record_translations->getTitleForLanguage($this->user->getLanguage()));
             $section->setInfo($record_translations->getDescriptionForLanguage($this->user->getLanguage()));
             $this->form->addItem($section);
+            }
+            // seminar-patch: end
 
             foreach ($fields as $field) {
+                // seminar-patch: begin
+                if (is_array($this->form_additional) && array_key_exists('search_whitelist', $this->form_additional)) {
+                    if (!in_array($field->getFieldId(), $this->form_additional['search_whitelist'])) {
+                        continue;
+                    }
+                }
+                // seminar-patch: end
                 $field_translations = ilAdvancedMDFieldTranslations::getInstanceByRecordId($record->getRecordId());
 
                 $field_form = ilADTFactory::getInstance()->getSearchBridgeForDefinitionInstance(

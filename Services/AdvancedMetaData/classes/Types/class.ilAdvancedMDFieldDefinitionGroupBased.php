@@ -182,7 +182,9 @@ abstract class ilAdvancedMDFieldDefinitionGroupBased extends ilAdvancedMDFieldDe
         return true;
     }
 
-    protected function getADTForOption(string $a_option): ilADT
+    // seminar-patch: begin
+    public function getADTForOption(string $a_option): ilADT
+    // seminar-patch: end
     {
         $adt = ilADTFactory::getInstance()->getInstanceByDefinition($this->getADTGroup());
         if (array_key_exists($a_option, $this->complex)) {

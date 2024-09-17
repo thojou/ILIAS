@@ -205,6 +205,17 @@ class ilUserUtil
     {
         /** @var ILIAS\DI\Container $DIC */
         global $DIC;
+        // seminar-patch: begin
+        $authMode = $DIC->user()->getAuthMode() ?? '';
+        if (str_starts_with($authMode, 'ldap') &&
+            $DIC['ilClientIniFile']->variableExists('login', 'ldap_starting_point_ref_id')) {
+            return ilLink::_getStaticLink(
+                (int) $DIC['ilClientIniFile']->readVariable('login', 'ldap_starting_point_ref_id'),
+                '',
+                true
+            );
+        }
+        // seminar-patch: end
         $starting_point_repository = new ilUserStartingPointRepository(
             $DIC['ilUser'],
             $DIC['ilDB'],

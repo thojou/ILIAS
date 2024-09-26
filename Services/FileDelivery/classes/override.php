@@ -11,4 +11,6 @@
  *
  * @author      Fabian Schmid <fs@studer-raimann.ch>
  */
+// databay-patch: begin file_delivery_override
 $override_delivery_type = ilFileDelivery::DELIVERY_METHOD_XACCEL;
+// databay-patch: end file_delivery_override

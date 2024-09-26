@@ -1198,6 +1198,10 @@ class ilObjMediaObject extends ilObject
 
                 // Media Pool
             case "mep":
+            // databay-patch: begin InteractiveVideo
+            case "xvid":            
+            // databay-patch: end InteractiveVideo
+
                 $obj_id = $id;
                 break;
 

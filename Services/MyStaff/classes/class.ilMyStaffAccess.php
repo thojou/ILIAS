@@ -56,11 +56,9 @@ class ilMyStaffAccess extends ilObjectAccess
         if (self::$instance === null) {
             self::$instance = new self();
 
-            // databay-patch: begin mystaff
             if (!self::isMyStaffActive()) {
                 return self::$instance;
             }
-            // databay-patch: end mystaff
 
             self::$instance->dropTempTable(self::TMP_DEFAULT_TABLE_NAME_PREFIX_IL_OBJ_SPEC_PERMISSIONS . "_" . self::ACCESS_ENROLMENTS_ORG_UNIT_OPERATION . "_"
                 . self::COURSE_CONTEXT);
@@ -81,19 +79,18 @@ class ilMyStaffAccess extends ilObjectAccess
     {
     }
 
-    // databay-patch: begin mystaff
     public static function isMyStaffActive(): bool
     {
         global $DIC;
-        return (bool) $DIC->settings()->get("enable_my_staff");
+
+        return (bool) $DIC->settings()->get('enable_my_staff');
     }
-    // databay-patch: end mystaff
 
     public function hasCurrentUserAccessToMyStaff(): bool
     {
         global $DIC;
 
-        if (!$DIC->settings()->get("enable_my_staff")) {
+        if (!self::isMyStaffActive()) {
             return false;
         }
 
@@ -124,7 +121,7 @@ class ilMyStaffAccess extends ilObjectAccess
     {
         global $DIC;
 
-        if (!$DIC->settings()->get("enable_my_staff")) {
+        if (!self::isMyStaffActive()) {
             return false;
         }
 
@@ -170,7 +167,7 @@ class ilMyStaffAccess extends ilObjectAccess
     {
         global $DIC;
 
-        if (!$DIC->settings()->get("enable_my_staff")) {
+        if (!self::isMyStaffActive()) {
             return false;
         }
 
@@ -211,7 +208,7 @@ class ilMyStaffAccess extends ilObjectAccess
     {
         global $DIC;
 
-        if (!$DIC->settings()->get("enable_my_staff")) {
+        if (!self::isMyStaffActive()) {
             return false;
         }
 
@@ -267,7 +264,7 @@ class ilMyStaffAccess extends ilObjectAccess
     {
         global $DIC;
 
-        if (!$DIC->settings()->get("enable_my_staff")) {
+        if (!self::isMyStaffActive()) {
             return false;
         }
 
@@ -293,7 +290,7 @@ class ilMyStaffAccess extends ilObjectAccess
     {
         global $DIC;
 
-        if (!$DIC->settings()->get("enable_my_staff")) {
+        if (!self::isMyStaffActive()) {
             return false;
         }
 

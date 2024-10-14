@@ -825,7 +825,10 @@ trait System
                 $method = new LTIOAuth\OAuthSignatureMethod_HMAC_SHA1();
                 $server->add_signature_method($method);
 //                $request = OAuth\OAuthRequest::from_request();
-                $request = LTIOAuth\OAuthRequest::from_request();
+                // databay-patch: begin lti-provider-ssl
+                $request = LTIOAuth\OAuthRequest::from_request(null, ILIAS_HTTP_PATH . '/lti.php');
+                // databay-patch: end lti-provider-ssl
+
                 $server->verify_request($request);
                 $ok = true;
             } catch (\Exception $e) {

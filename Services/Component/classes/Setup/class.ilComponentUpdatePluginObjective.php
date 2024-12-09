@@ -211,7 +211,9 @@ class ilComponentUpdatePluginObjective implements Setup\Objective
         }
 
         if (!defined("ILIAS_WEB_DIR")) {
-            define('ILIAS_WEB_DIR', dirname(__DIR__, 4) . "/data/");
+            // databay-patch: begin ilias_web_dir
+            define('ILIAS_WEB_DIR', 'data');
+            // databay-patch: end ilias_web_dir
         }
 
         // initialise this last to make sure the environment defined here

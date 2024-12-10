@@ -72,7 +72,9 @@ class ilResourceStorageMigrationHelper
             define("CLIENT_WEB_DIR", dirname(__DIR__, 4) . "/data/" . $client_id);
         }
         if (!defined("ILIAS_WEB_DIR")) {
-            define("ILIAS_WEB_DIR", dirname(__DIR__, 4));
+            // databay-patch: begin ilias_web_dir
+            define('ILIAS_WEB_DIR', 'data');
+            // databay-patch: end ilias_web_dir
         }
         if (!defined("CLIENT_ID")) {
             define("CLIENT_ID", $client_id);

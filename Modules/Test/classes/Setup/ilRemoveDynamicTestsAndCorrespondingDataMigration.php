@@ -42,6 +42,7 @@ class ilRemoveDynamicTestsAndCorrespondingDataMigration implements Setup\Migrati
 
     public function getLabel(): string
     {
+        return "Remove dynamic tests and corresponding data migration";
     }
 
     public function getDefaultAmountOfStepsPerRun(): int

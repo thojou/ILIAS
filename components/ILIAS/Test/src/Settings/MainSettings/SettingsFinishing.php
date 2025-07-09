@@ -31,7 +31,6 @@ use ILIAS\Refinery\Factory as Refinery;
 class SettingsFinishing extends TestSettings
 {
     public function __construct(
-        int $test_id,
         protected bool $show_answer_overview = false,
         protected bool $concluding_remarks_enabled = false,
         protected ?string $concluding_remarks_text = '',
@@ -41,7 +40,7 @@ class SettingsFinishing extends TestSettings
         protected int $mail_notification_content_type = 0,
         protected bool $always_send_mail_notification = false
     ) {
-        parent::__construct($test_id);
+        parent::__construct();
     }
 
     public function toForm(

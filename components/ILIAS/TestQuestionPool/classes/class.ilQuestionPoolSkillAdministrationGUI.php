@@ -16,7 +16,10 @@
  *
  *********************************************************************/
 
+use ILIAS\HTTP\GlobalHttpState;
 use ILIAS\Refinery\Factory as Refinery;
+use ILIAS\UI\Factory;
+use ILIAS\UI\Renderer;
 
 /**
  * @author		Björn Heyser <bheyser@databay.de>
@@ -25,7 +28,7 @@ use ILIAS\Refinery\Factory as Refinery;
  * @package components\ILIAS/TestQuestionPool
  *
  * @ilCtrl_Calls ilQuestionPoolSkillAdministrationGUI: ilAssQuestionSkillAssignmentsGUI
- * @ilCtrl_Calls ilQuestionPoolSkillAdministrationGUI: ilAssQuestionSkillUsagesTableGUI
+ * @ilCtrl_Calls ilQuestionPoolSkillAdministrationGUI: ilAssQuestionSkillUsagesGUI
  */
 class ilQuestionPoolSkillAdministrationGUI
 {
@@ -62,6 +65,21 @@ class ilQuestionPoolSkillAdministrationGUI
     private $lng;
 
     /**
+     * @var Factory
+     */
+    private $ui_factory;
+
+    /**
+     * @var Renderer
+     */
+    private $ui_renderer;
+
+    /**
+     * @var GlobalHttpState
+     */
+    private $http_state;
+
+    /**
      * @var ilDBInterface
      */
     private $db;
@@ -79,6 +97,9 @@ class ilQuestionPoolSkillAdministrationGUI
     public function __construct(
         ILIAS $ilias,
         ilCtrl $ctrl,
+        Factory $ui_factory,
+        Renderer $ui_renderer,
+        GlobalHttpState $http_state,
         Refinery $refinery,
         ilAccessHandler $access,
         ilTabsGUI $tabs,
@@ -91,6 +112,9 @@ class ilQuestionPoolSkillAdministrationGUI
     ) {
         $this->ilias = $ilias;
         $this->ctrl = $ctrl;
+        $this->ui_factory = $ui_factory;
+        $this->ui_renderer = $ui_renderer;
+        $this->http_state = $http_state;
         $this->refinery = $refinery;
         $this->access = $access;
         $this->tabs = $tabs;
@@ -132,11 +156,11 @@ class ilQuestionPoolSkillAdministrationGUI
         );
 
         $link = $this->ctrl->getLinkTargetByClass(
-            'ilAssQuestionSkillUsagesTableGUI',
-            ilAssQuestionSkillUsagesTableGUI::CMD_SHOW
+            ilAssQuestionSkillUsagesGUI::class,
+            ilAssQuestionSkillUsagesGUI::CMD_SHOW
         );
         $this->tabs->addSubTab(
-            'ilassquestionskillusagestablegui',
+            strtolower(ilAssQuestionSkillUsagesGUI::class),
             $this->lng->txt('qpl_skl_sub_tab_usages'),
             $link
         );
@@ -176,12 +200,14 @@ class ilQuestionPoolSkillAdministrationGUI
 
                 break;
 
-            case 'ilassquestionskillusagestablegui':
-
-                $gui = new ilAssQuestionSkillUsagesTableGUI(
+            case strtolower(ilAssQuestionSkillUsagesGUI::class):
+                $gui = new ilAssQuestionSkillUsagesGUI(
+                    $this->ui_factory,
+                    $this->ui_renderer,
+                    $this->http_state,
+                    $this->lng,
                     $this->ctrl,
                     $this->tpl,
-                    $this->lng,
                     $this->db,
                     $this->poolOBJ->getId()
                 );

@@ -19,6 +19,7 @@
 use ILIAS\TestQuestionPool\QuestionPoolDIC;
 use ILIAS\TestQuestionPool\RequestDataCollector;
 use ILIAS\Skill\Service\SkillUsageService;
+use ILIAS\UI\Component\Table\PresentationRow;
 
 /**
  * User interface for assignment of questions from a test question pool (or
@@ -463,6 +464,12 @@ class ilAssQuestionSkillAssignmentsGUI
 
     private function showSkillQuestionAssignmentsCmd($loadSkillPointsFromRequest = false): void
     {
+        global $DIC;
+
+        $renderer = $DIC->ui()->renderer();
+        $factory = $DIC->ui()->factory();
+
+
         $this->handleAssignmentConfigurationHintMessage();
 
         $table = $this->buildTableGUI();
@@ -474,7 +481,17 @@ class ilAssQuestionSkillAssignmentsGUI
         $table->setSkillQuestionAssignmentList($assignmentList);
         $table->setData($this->orderQuestionData($this->question_list->getQuestionDataArray()));
 
-        $this->tpl->setContent($table->getHTML());
+        $this->tpl->setContent($table->getHTML()) . $renderer->render([
+            $factory->table()->presentation(
+                'Fragen-Kompetenz-Zuordnung',
+                 [],
+                function(PresentationRow $row, ilAssQuestionSkillAssignment $record, $ui_factory, $environment) {
+                    return $row
+                        ->withHeadline("Fehler/Worte markieren")
+                        ->withSubheadline('Bescheibungstext der Frage');
+                }
+            )->withData([])
+        ]);
     }
 
     private function isSyncOriginalPossibleAndAllowed($questionId): bool

@@ -32,25 +32,15 @@ class ilAssQuestionSkillUsagesGUI
         private readonly Renderer $ui_renderer,
         private readonly GlobalHttpState $http_state,
         private readonly ilLanguage $lng,
-        private readonly ilCtrl $ctrl,
         private readonly ilGlobalTemplateInterface $tpl,
         private readonly ilDBInterface $db,
-        private readonly int $parent_obj_id,
+        private readonly int $parent_obj_id
     ) {
     }
 
     public function executeCommand(): bool
     {
-        switch (strtolower((string) $this->ctrl->getNextClass($this))) {
-            case strtolower(__CLASS__):
-            case '':
-                $cmd = $this->ctrl->getCmd() . 'Cmd';
-                return $this->$cmd();
-            default:
-                $this->ctrl->setReturn($this, self::CMD_SHOW);
-
-                return false;
-        }
+        return $this->showCmd();
     }
 
     public function showCmd(): bool
@@ -61,12 +51,7 @@ class ilAssQuestionSkillUsagesGUI
 
     private function getTable(): string
     {
-        $table = new ilAssQuestionSkillUsagesTable(
-            $this->ui_factory,
-            $this->lng,
-            $this->db,
-            $this->parent_obj_id
-        );
+        $table = new ilAssQuestionSkillUsagesTable($this->ui_factory, $this->lng, $this->db, $this->parent_obj_id);
 
         return $this->ui_renderer->render($table->getComponent()->withRequest($this->http_state->request()));
     }

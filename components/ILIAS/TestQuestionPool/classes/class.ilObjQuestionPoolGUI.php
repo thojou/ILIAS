@@ -432,7 +432,8 @@ class ilObjQuestionPoolGUI extends ilObjectGUI implements ilCtrlBaseClassInterfa
 
                 break;
 
-            case 'ilquestionpoolskilladministrationgui':
+            case strtolower(ilQuestionPoolSkillAdministrationGUI::class):
+                /** @var ilObjQuestionPool $obj */
                 $obj = $this->object;
                 $gui = new ilQuestionPoolSkillAdministrationGUI(
                     $this->ilias,

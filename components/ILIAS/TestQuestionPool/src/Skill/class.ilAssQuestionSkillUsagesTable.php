@@ -39,17 +39,13 @@ class ilAssQuestionSkillUsagesTable implements DataRetrieval
         private readonly Factory $ui_factory,
         private readonly ilLanguage $lng,
         private readonly ilDBInterface $db,
-        private readonly int $parent_obj_id,
+        private readonly int $parent_obj_id
     ) {
     }
 
     public function getComponent(): Data
     {
-        return $this->ui_factory->table()->data(
-            $this,
-            '',
-            $this->getColumns()
-        )->withId((string) $this->parent_obj_id);
+        return $this->ui_factory->table()->data($this, '', $this->getColumns())->withId((string) $this->parent_obj_id);
     }
 
     public function getColumns(): array
@@ -57,12 +53,9 @@ class ilAssQuestionSkillUsagesTable implements DataRetrieval
         $column_factory = $this->ui_factory->table()->column();
 
         return [
-            'skill_title' => $column_factory
-                ->text($this->lng->txt('qpl_qst_skl_usg_skill_col')),
-            'num_assigns' => $column_factory
-                ->text($this->lng->txt('qpl_qst_skl_usg_numq_col')),
-            'max_points' => $column_factory
-                ->text($this->lng->txt('qpl_qst_skl_usg_sklpnt_col')),
+            'skill_title' => $column_factory->text($this->lng->txt('qpl_qst_skl_usg_skill_col')),
+            'num_assigns' => $column_factory->text($this->lng->txt('qpl_qst_skl_usg_numq_col')),
+            'max_points' => $column_factory->text($this->lng->txt('qpl_qst_skl_usg_sklpnt_col'))
         ];
     }
 
@@ -113,20 +106,19 @@ class ilAssQuestionSkillUsagesTable implements DataRetrieval
     {
         $this->initRecords($filter_data, $additional_parameters);
 
-        return $this->limitRecords(
-            $this->sortRecords($this->records, $order),
-            $range
-        );
+        return $this->limitRecords($this->sortRecords($this->records, $order), $range);
     }
 
-    public function getRows(DataRowBuilder $row_builder, array $visible_column_ids, Range $range, Order $order, ?array $filter_data, ?array $additional_parameters): Generator
-    {
-        $records = $this->getRecords($order, $range, $filter_data, $additional_parameters);
-        foreach ($records as $row_id => $record) {
-            yield $row_builder->buildDataRow(
-                (string) $row_id,
-                $record
-            );
+    public function getRows(
+        DataRowBuilder $row_builder,
+        array $visible_column_ids,
+        Range $range,
+        Order $order,
+        ?array $filter_data,
+        ?array $additional_parameters
+    ): Generator {
+        foreach ($this->getRecords($order, $range, $filter_data, $additional_parameters) as $row_id => $record) {
+            yield $row_builder->buildDataRow((string) $row_id, $record);
         }
     }
 

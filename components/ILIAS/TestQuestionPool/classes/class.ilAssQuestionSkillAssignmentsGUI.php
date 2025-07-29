@@ -481,17 +481,71 @@ class ilAssQuestionSkillAssignmentsGUI
         $table->setSkillQuestionAssignmentList($assignmentList);
         $table->setData($this->orderQuestionData($this->question_list->getQuestionDataArray()));
 
-        $this->tpl->setContent($table->getHTML()) . $renderer->render([
+        $this->tpl->setContent($table->getHTML() . $renderer->render([
             $factory->table()->presentation(
                 'Fragen-Kompetenz-Zuordnung',
                  [],
-                function(PresentationRow $row, ilAssQuestionSkillAssignment $record, $ui_factory, $environment) {
+                function(PresentationRow $row, array $record, \ILIAS\UI\Factory $ui_factory, $environment) use ($renderer) {
                     return $row
-                        ->withHeadline("Fehler/Worte markieren")
-                        ->withSubheadline('Bescheibungstext der Frage');
+                        ->withHeadline($record['title'])
+                        ->withSubheadline($record['description'])
+                        ->withLeadingSymbol(
+                            $ui_factory->symbol()->icon()->standard('ques', "")
+                        )
+                        ->withImportantFields([
+                            "Kompetenzzuweisungen" => "Komb1, Komb2, Komb3"
+                        ])
+                        ->withContent(
+                            $ui_factory->listing()->descriptive([
+                                "Kompetenzzuweisungen:" => $ui_factory->listing()->descriptive([
+                                    "Kom1" => $ui_factory->listing()->property()
+                                        ->withProperty(
+                                            'Baum',
+                                            "Default"
+                                        )
+                                        ->withProperty(
+                                            'Evalurierung durch',
+                                            "Lösungsvergleich"
+                                        )
+                                        ->withProperty(
+                                            'Punkte',
+                                            2
+                                        ),
+                                    "Kom2" => $ui_factory->listing()->property()
+                                        ->withProperty(
+                                            'Baum',
+                                            "Default"
+                                        )
+                                        ->withProperty(
+                                            'Evalurierung durch',
+                                            "Lösungsvergleich"
+                                        )
+                                        ->withProperty(
+                                            'Punkte',
+                                            4
+                                        ),
+                                    "Kom3" => $ui_factory->listing()->property()
+                                        ->withProperty(
+                                            'Baum',
+                                            "Default"
+                                        )
+                                        ->withProperty(
+                                            'Evalurierung durch',
+                                            "Antwort"
+                                        )
+                                        ->withProperty(
+                                            'Punkte',
+                                            5
+                                        ),
+                                ])
+                            ])
+                        )
+                        ->withAction(
+                            $ui_factory->button()->standard('Zuordnung bearbeiten', '')
+                        );
                 }
-            )->withData([])
-        ]);
+            )->withData($this->orderQuestionData($this->question_list->getQuestionDataArray()))
+        ]));
     }
 
     private function isSyncOriginalPossibleAndAllowed($questionId): bool

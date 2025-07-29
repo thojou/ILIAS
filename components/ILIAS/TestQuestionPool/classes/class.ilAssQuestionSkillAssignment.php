@@ -273,7 +273,7 @@ class ilAssQuestionSkillAssignment
         if (isset($root_node['skl_tree_id'])) {
             array_unshift(
                 $nodes,
-                $this->skill_tree_service->getObjSkillTreeById($root_node['skl_tree_id'])->getTitle()
+                htmlspecialchars($this->skill_tree_service->getObjSkillTreeById($root_node['skl_tree_id'])->getTitle())
             );
         }
 

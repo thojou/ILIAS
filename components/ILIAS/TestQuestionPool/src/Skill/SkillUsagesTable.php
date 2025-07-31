@@ -31,7 +31,7 @@ use ILIAS\UI\Component\Table\DataRowBuilder;
 use ILIAS\UI\Factory;
 use ilLanguage;
 
-class ilAssQuestionSkillUsagesTable implements DataRetrieval
+class SkillUsagesTable implements DataRetrieval
 {
     private ?array $records = null;
 

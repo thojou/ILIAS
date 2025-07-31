@@ -19,7 +19,7 @@
 declare(strict_types=1);
 
 use ILIAS\HTTP\GlobalHttpState;
-use ILIAS\TestQuestionPool\Skill\ilAssQuestionSkillUsagesTable;
+use ILIAS\TestQuestionPool\Skill\SkillUsagesTable;
 use ILIAS\UI\Factory;
 use ILIAS\UI\Renderer;
 
@@ -51,7 +51,7 @@ class ilAssQuestionSkillUsagesGUI
 
     private function getTable(): string
     {
-        $table = new ilAssQuestionSkillUsagesTable($this->ui_factory, $this->lng, $this->db, $this->parent_obj_id);
+        $table = new SkillUsagesTable($this->ui_factory, $this->lng, $this->db, $this->parent_obj_id);
 
         return $this->ui_renderer->render($table->getComponent()->withRequest($this->http_state->request()));
     }

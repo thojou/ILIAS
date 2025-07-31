@@ -20,6 +20,7 @@ use ILIAS\TestQuestionPool\QuestionPoolDIC;
 use ILIAS\TestQuestionPool\RequestDataCollector;
 use ILIAS\Skill\Service\SkillUsageService;
 use ILIAS\UI\Component\Table\PresentationRow;
+use ILIAS\UI\URLBuilder;
 
 /**
  * User interface for assignment of questions from a test question pool (or
@@ -468,6 +469,9 @@ class ilAssQuestionSkillAssignmentsGUI
 
         $renderer = $DIC->ui()->renderer();
         $factory = $DIC->ui()->factory();
+        $data_factory = new \ILIAS\Data\Factory();
+        $refinery = $DIC->refinery();
+        $http = $DIC->http();
 
 
         $this->handleAssignmentConfigurationHintMessage();
@@ -481,71 +485,68 @@ class ilAssQuestionSkillAssignmentsGUI
         $table->setSkillQuestionAssignmentList($assignmentList);
         $table->setData($this->orderQuestionData($this->question_list->getQuestionDataArray()));
 
+        $questions = $this->orderQuestionData($this->question_list->getQuestionDataArray());
+        $data = [];
+        foreach($questions as $question_id => $question_data) {
+            $assignments = $assignmentList->getAssignmentsByQuestionId($question_id);
+
+            $data[] = [
+                'question' => $question_data,
+                'assignments' => $assignments,
+            ];
+        }
+
+        $url_builder = new URLBuilder($data_factory->uri(
+            ILIAS_HTTP_PATH . '/' . $this->ctrl->getLinkTargetByClass(
+                ilAssQuestionSkillAssignmentsGUI::class,
+                'showSkillQuestionAssignments'
+            )
+        ));
+
         $this->tpl->setContent($table->getHTML() . $renderer->render([
-            $factory->table()->presentation(
-                'Fragen-Kompetenz-Zuordnung',
-                 [],
-                function(PresentationRow $row, array $record, \ILIAS\UI\Factory $ui_factory, $environment) use ($renderer) {
-                    return $row
-                        ->withHeadline($record['title'])
-                        ->withSubheadline($record['description'])
-                        ->withLeadingSymbol(
-                            $ui_factory->symbol()->icon()->standard('ques', "")
-                        )
-                        ->withImportantFields([
-                            "Kompetenzzuweisungen" => "Komb1, Komb2, Komb3"
-                        ])
-                        ->withContent(
-                            $ui_factory->listing()->descriptive([
-                                "Kompetenzzuweisungen:" => $ui_factory->listing()->descriptive([
-                                    "Kom1" => $ui_factory->listing()->property()
-                                        ->withProperty(
-                                            'Baum',
-                                            "Default"
-                                        )
-                                        ->withProperty(
-                                            'Evalurierung durch',
-                                            "Lösungsvergleich"
-                                        )
-                                        ->withProperty(
-                                            'Punkte',
-                                            2
-                                        ),
-                                    "Kom2" => $ui_factory->listing()->property()
-                                        ->withProperty(
-                                            'Baum',
-                                            "Default"
-                                        )
-                                        ->withProperty(
-                                            'Evalurierung durch',
-                                            "Lösungsvergleich"
-                                        )
-                                        ->withProperty(
-                                            'Punkte',
-                                            4
-                                        ),
-                                    "Kom3" => $ui_factory->listing()->property()
-                                        ->withProperty(
-                                            'Baum',
-                                            "Default"
-                                        )
-                                        ->withProperty(
-                                            'Evalurierung durch',
-                                            "Antwort"
-                                        )
-                                        ->withProperty(
-                                            'Punkte',
-                                            5
-                                        ),
-                                ])
-                            ])
-                        )
-                        ->withAction(
-                            $ui_factory->button()->standard('Zuordnung bearbeiten', '')
-                        );
-                }
-            )->withData($this->orderQuestionData($this->question_list->getQuestionDataArray()))
+            (new SkillTable(
+                $this->question_list,
+                $assignmentList,
+                $http,  $factory, $refinery, $this->lng, $this->ctrl))->execute($url_builder, $data)
         ]));
+    }
+
+    private function editSkillQuestionAssignmentCmd(): void
+    {
+        global $DIC;
+
+        $renderer = $DIC->ui()->renderer();
+        $factory = $DIC->ui()->factory();
+        $refinery = $DIC->refinery();
+        $http = $DIC->http();
+
+        $data_factory = new \ILIAS\Data\Factory();
+
+        $url_builder = new URLBuilder($data_factory->uri(
+            ILIAS_HTTP_PATH . '/' . $this->ctrl->getLinkTargetByClass(
+                ilAssQuestionSkillAssignmentsGUI::class,
+                'editSkillQuestionAssignment'
+            )
+        ));
+
+        $skill_table = new SkillTable($http,  $factory, $refinery, $this->lng, $this->ctrl);
+        [$url_builder, $row_id_token] = $skill_table->acquireParameters($url_builder);
+
+        $q_id = $http->wrapper()->query()->retrieve(
+            $row_id_token->getName(),
+            $refinery->kindlyTo()->int()
+        );
+
+        $assignmentList = $this->buildSkillQuestionAssignmentList();
+        $assignmentList->loadFromDb();
+        $assignmentList->loadAdditionalSkillData();
+
+        $this->tpl->setContent(
+            $renderer->render(
+                (new SkillAssignmentTable($factory, $this->lng, $assignmentList->getAssignmentsByQuestionId($q_id)))
+                    ->getComponents($http->request())
+            )
+        );
     }
 
     private function isSyncOriginalPossibleAndAllowed($questionId): bool
@@ -773,6 +774,12 @@ class ilAssQuestionSkillAssignmentsGUI
         $this->ctrl->saveParameter($this, 'skill_tref_id');
     }
 
+    /**
+     * @param $questionData
+     *
+     * @return array|mixed
+     * @deprecated
+     */
     private function orderQuestionData($questionData)
     {
         $orderedQuestionsData = [];

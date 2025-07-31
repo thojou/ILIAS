@@ -199,7 +199,7 @@ class Test11DBUpdateSteps implements \ilDatabaseUpdateSteps
                 ['mark_id'],
                 'tst_mark',
                 ForeignKeyConstraints::NO_ACTION,
-                ForeignKeyConstraints::RESTRICT
+                ForeignKeyConstraints::CASCADE
             );
         }
     }

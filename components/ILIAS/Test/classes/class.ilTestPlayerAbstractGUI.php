@@ -1321,7 +1321,7 @@ abstract class ilTestPlayerAbstractGUI extends ilTestServiceGUI
 
     protected function determineSolutionPassIndex(assQuestionGUI $question_gui): int
     {
-        if ($this->object->isPreviousSolutionReuseEnabled($this->test_session->getActiveId())) {
+        if ($this->object->isPreviousSolutionReuseEnabled()) {
             $currentSolutionAvailable = $question_gui->getObject()->authorizedOrIntermediateSolutionExists(
                 $this->test_session->getActiveId(),
                 $this->test_session->getPass()
@@ -2763,7 +2763,7 @@ JS;
     protected function initTestQuestionConfig(assQuestion $question_obj)
     {
         $question_obj->getTestPresentationConfig()->setPreviousPassSolutionReuseAllowed(
-            $this->object->isPreviousSolutionReuseEnabled($this->test_session->getActiveId())
+            $this->object->isPreviousSolutionReuseEnabled()
         );
     }
 

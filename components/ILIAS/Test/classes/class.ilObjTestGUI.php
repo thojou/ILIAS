@@ -18,9 +18,12 @@
 
 declare(strict_types=1);
 
+use ILIAS\Filesystem\Filesystems;
 use ILIAS\Test\Results\Data\Repository as TestResultRepository;
 use ILIAS\Test\Settings\MainSettings\MainSettingsDatabaseRepository;
 use ILIAS\Test\Settings\Templates\PersonalSettingsCreateAction;
+use ILIAS\Test\Settings\Templates\PersonalSettingsImportAction;
+use ILIAS\Test\Settings\Templates\PersonalSettingsImportHandler;
 use ILIAS\Test\Settings\Templates\PersonalSettingsRepository;
 use ILIAS\Test\Settings\Templates\PersonalSettingsTable;
 use ILIAS\Test\Settings\Templates\PersonalSettingsTableActions;
@@ -114,6 +117,7 @@ use ILIAS\User\Profile\PublicProfileGUI;
  * @ilCtrl_Calls ilObjTestGUI: ilAssQuestionPreviewGUI
  * @ilCtrl_Calls ilObjTestGUI: ilTestQuestionBrowserTableGUI, ilTestInfoScreenToolbarGUI, ilLTIProviderObjectSettingGUI
  * @ilCtrl_Calls ilObjTestGUI: ilTestPageGUI
+ * @ilCtrl_Calls ilObjTestGUI: PersonalSettingsImportHandlerGUI
  *
  * @ingroup components\ILIASTest
  */
@@ -935,7 +939,7 @@ class ilObjTestGUI extends ilObjectGUI implements ilCtrlBaseClassInterface, ilDe
                     return;
                 }
 
-                if (in_array($cmd, ['executeTemplatesAction', 'showTemplates', 'createTemplate'])) {
+                if (in_array($cmd, ['executeTemplatesAction', 'showTemplates', 'createTemplate', 'importTemplate'])) {
                     $local_cmd = $cmd . 'Cmd';
                 } else {
                     $local_cmd = $cmd . 'Object';
@@ -2027,17 +2031,27 @@ class ilObjTestGUI extends ilObjectGUI implements ilCtrlBaseClassInterface, ilDe
 
         $create_input = $this->buildPersonalSettingsCreateAction()
             ->buildInput($this->ctrl->getLinkTargetByClass(self::class, 'createTemplate'));
+        $import_input = $this->buildPersonalSettingsImportAction()
+            ->buildInput($this->ctrl->getLinkTargetByClass(self::class, 'importTemplate'));
 
-        $create_button = $this->ui_factory->button()->standard(
-            $this->lng->txt('personal_settings_create'),
-            $create_input->getShowSignal()
+        $this->toolbar->addComponent(
+            $this->ui_factory->button()->standard(
+                $this->lng->txt('personal_settings_create'),
+                $create_input->getShowSignal()
+            )
         );
-        $this->toolbar->addComponent($create_button);
+        $this->toolbar->addComponent(
+            $this->ui_factory->button()->standard(
+                $this->lng->txt('personal_settings_import'),
+                $import_input->getShowSignal()
+            )
+        );
 
         $components = [
             $this->buildPersonalSettingsTable()->getComponent(),
             $modal,
-            $create_input
+            $create_input,
+            $import_input
         ];
 
         $this->tpl->setContent(
@@ -2052,6 +2066,22 @@ class ilObjTestGUI extends ilObjectGUI implements ilCtrlBaseClassInterface, ilDe
         try {
             $this->buildPersonalSettingsCreateAction()
                 ->perform($this->getTestObject()->getTestId(), $this->request);
+        } catch (\InvalidArgumentException $e) {
+            $this->tpl->setOnScreenMessage('failure', $this->lng->txt($e->getMessage()), true);
+        }
+
+        $this->ctrl->redirectByClass(self::class, 'showTemplates');
+    }
+
+    public function importTemplateCmd(): void
+    {
+        $this->protectByWritePermission();
+
+        try {
+            $this->buildPersonalSettingsImportAction()
+                ->perform($this->request);
+
+            $this->tpl->setOnScreenMessage('success', $this->lng->txt('personal_settings_import_success'), true);
         } catch (\InvalidArgumentException $e) {
             $this->tpl->setOnScreenMessage('failure', $this->lng->txt($e->getMessage()), true);
         }
@@ -2077,6 +2107,18 @@ class ilObjTestGUI extends ilObjectGUI implements ilCtrlBaseClassInterface, ilDe
             $this->ui_factory,
             $this->lng,
             $this->user,
+            $this->personal_settings_templates_repository
+        );
+    }
+
+    protected function buildPersonalSettingsImportAction(): PersonalSettingsImportAction
+    {
+        return new PersonalSettingsImportAction(
+            $this->ui_factory,
+            $this->lng,
+            $this->user,
+            $this->data_factory,
+            $this->temp_file_system,
             $this->personal_settings_templates_repository
         );
     }

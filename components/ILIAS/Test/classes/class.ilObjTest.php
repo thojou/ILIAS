@@ -4016,6 +4016,7 @@ class ilObjTest extends ilObject
         $new_obj->saveToDb();
         $new_obj->addToNewsOnOnline(false, $new_obj->getObjectProperties()->getPropertyIsOnline()->getIsOnline());
 
+        $new_settings_id = $this->getMainSettingsRepository()->createFor($new_obj->getTestId());
         $new_settings = $this->getMainSettings()
             ->withIntroductionSettings(
                 $this->getMainSettings()->getIntroductionSettings()->withIntroductionPageId(
@@ -4025,11 +4026,12 @@ class ilObjTest extends ilObject
                 $this->getMainSettings()->getFinishingSettings()->withConcludingRemarksPageId(
                     $this->cloneConcludingRemarks()
                 )
-            );
+            )->withId($new_settings_id);
 
-        $new_settings = $this->getMainSettingsRepository()->cloneFor($new_obj->getTestId(), $new_settings);
+
+        $this->getMainSettingsRepository()->store($new_settings);
         $this->getScoreSettingsRepository()->store(
-            $this->getScoreSettings()->withId($new_settings->getId())
+            $this->getScoreSettings()->withId($new_settings_id)
         );
         $this->marks_repository->storeMarkSchema(
             $this->getMarkSchema()->withTestId($new_obj->getTestId())

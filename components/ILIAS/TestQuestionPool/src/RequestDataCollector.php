@@ -26,6 +26,7 @@ use ILIAS\Refinery\ConstraintViolationException;
 use ILIAS\HTTP\Services;
 use ILIAS\Refinery\Factory;
 use ILIAS\FileUpload\FileUpload;
+use Psr\Http\Message\ServerRequestInterface;
 
 class RequestDataCollector
 {
@@ -37,6 +38,11 @@ class RequestDataCollector
         protected readonly FileUpload $upload
     ) {
         $this->initRequest($http, $refinery);
+    }
+
+    public function getRequest(): ServerRequestInterface
+    {
+        return $this->http->request();
     }
 
     /**
@@ -237,6 +243,26 @@ class RequestDataCollector
     public function rawArray(string $key): array
     {
         return $this->retrieveArray($key, 1, $this->refinery->identity());
+    }
+
+    /**
+     * @return array<int>|string
+     */
+    public function getMultiSelectionIds(string $key): array|string
+    {
+        $p = $this->http->wrapper()->query();
+        $r = $this->refinery;
+
+        if (!$p->has($key)) {
+            return [];
+        }
+
+        return $p->retrieve(
+            $key,
+            $r->custom()->transformation(function ($value) {
+                return $value === 'ALL_OBJECTS' || $value[0] === 'ALL_OBJECTS' ? 'ALL_OBJECTS' : array_map('intval', $value);
+            })
+        );
     }
 
     private function retrieveArray(string $key, int $depth, Transformation $transformation): array

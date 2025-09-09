@@ -16,6 +16,8 @@
  *
  *********************************************************************/
 
+declare(strict_types=1);
+
 namespace ILIAS\TestQuestionPool\Skill;
 
 use ilAssQuestionSkillAssignment;
@@ -28,7 +30,9 @@ use Psr\Http\Message\ServerRequestInterface;
 interface SkillAssignmentTableAction
 {
     public function getActionId(): string;
+
     public function isAvailable(): bool;
+
     public function getTableAction(
         URLBuilder $url_builder,
         URLBuilderToken $row_id_token,
@@ -54,6 +58,8 @@ interface SkillAssignmentTableAction
         array $selected_assignments,
         bool $all_assignments_selected
     ): ?Modal;
+
     public function allowActionForRecord(ilAssQuestionSkillAssignment $record): bool;
+
     public function getSelectionErrorMessage(): ?string;
 }

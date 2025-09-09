@@ -1,5 +1,23 @@
 <?php
 
+/**
+ * This file is part of ILIAS, a powerful learning management system
+ * published by ILIAS open source e-Learning e.V.
+ *
+ * ILIAS is licensed with the GPL-3.0,
+ * see https://www.gnu.org/licenses/gpl-3.0.en.html
+ * You should have received a copy of said license along with the
+ * source code, too.
+ *
+ * If this is not the case or you just want to try ILIAS, you'll find
+ * us at:
+ * https://www.ilias.de
+ * https://github.com/ILIAS-eLearning
+ *
+ *********************************************************************/
+
+declare(strict_types=1);
+
 use ILIAS\TestQuestionPool\ResponseHandler;
 use ILIAS\TestQuestionPool\RequestDataCollector;
 use ILIAS\TestQuestionPool\Skill\SkillAssignmentTableAction;
@@ -10,6 +28,7 @@ use ILIAS\UI\Factory as UIFactory;
 use ILIAS\UI\Renderer;
 use ILIAS\UI\URLBuilder;
 use ILIAS\UI\URLBuilderToken;
+use ILIAS\UICore\GlobalTemplate;
 
 class SkillAssignmentTableActions
 {
@@ -18,22 +37,19 @@ class SkillAssignmentTableActions
     public const string ACTION_TYPE_PARAMETER = 'action_type';
     public const string SHOW_ACTION = 'showAction';
     public const string SUBMIT_ACTION = 'submitAction';
-
+    public const string ALL_OBJECTS = 'ALL_OBJECTS';
 
     /**
-     * @param UIFactory  $ui_factory
-     * @param ilLanguage $lng
-     * @param array<ilAssQuestionSkillAssignment> $assignments
+     * @param array<SkillAssignmentTableAction> $actions
      */
     public function __construct(
         private readonly ilLanguage $lng,
-        protected readonly \ilGlobalTemplateInterface $tpl,
+        protected readonly ilGlobalTemplateInterface $tpl,
         private readonly UIFactory $ui_factory,
         private readonly Renderer $ui_renderer,
         private readonly RequestDataCollector $pool_request,
         private readonly ResponseHandler $pool_response,
         private readonly ilAssQuestionSkillAssignmentList $assignment_list,
-        /** @var array<SkillAssignmentTableAction> */
         private readonly array $actions
     ) {
     }
@@ -46,22 +62,15 @@ class SkillAssignmentTableActions
     ): array {
         return array_filter(
             array_map(
-                function (SkillAssignmentTableAction $action) use (
+                static function (SkillAssignmentTableAction $action) use (
                     $url_builder,
                     $row_id_token,
                     $action_token,
                     $action_type_token
                 ): ?Action {
-                    if (!$action->isAvailable()) {
-                        return null;
-                    }
-
-                    return $action->getTableAction(
-                        $url_builder,
-                        $row_id_token,
-                        $action_token,
-                        $action_type_token
-                    );
+                    return $action->isAvailable()
+                        ? $action->getTableAction($url_builder, $row_id_token, $action_token, $action_type_token)
+                        : null;
                 },
                 $this->actions
             )
@@ -86,12 +95,7 @@ class SkillAssignmentTableActions
                 $action_token,
                 $action_type_token
             ),
-            default => $this->showModal(
-                $url_builder,
-                $row_id_token,
-                $action_token,
-                $action_type_token
-            ),
+            default => $this->showModal($url_builder, $row_id_token, $action_token, $action_type_token),
         };
     }
 
@@ -114,18 +118,13 @@ class SkillAssignmentTableActions
     ): void {
         $action = $this->actions[$this->pool_request->string($action_token->getName())];
         $selected_assignments_from_request = $this->pool_request->getMultiSelectionIds($row_id_token->getName());
-        $selected_assignments = $this->resolveSelectedAssignments(
-            $action,
-            $selected_assignments_from_request
-        );
+        $selected_assignments = $this->resolveSelectedAssignments($action, $selected_assignments_from_request);
 
         if ($selected_assignments === []) {
             $error_message = $action->getSelectionErrorMessage() ?? $this->lng->txt('no_valid_participant_selection');
             $this->pool_response->sendAsync(
                 $this->ui_renderer->renderAsync(
-                    $this->ui_factory->messageBox()->failure(
-                        $error_message
-                    )
+                    $this->ui_factory->messageBox()->failure($error_message)
                 )
             );
         }
@@ -138,7 +137,7 @@ class SkillAssignmentTableActions
                         ->withParameter($action_token, $action->getActionId())
                         ->withParameter($action_type_token, self::SUBMIT_ACTION),
                     $selected_assignments,
-                    $selected_assignments_from_request === 'ALL_OBJECTS'
+                    $selected_assignments_from_request === self::ALL_OBJECTS
                 )
             )
         );
@@ -149,8 +148,7 @@ class SkillAssignmentTableActions
         URLBuilderToken $row_id_token,
         URLBuilderToken $action_token,
         URLBuilderToken $action_type_token
-    ): ?Modal
-    {
+    ): ?Modal {
         $action = $this->actions[$this->pool_request->string($action_token->getName())];
         $selected_assignments_from_request = $this->pool_request->getMultiSelectionIds($row_id_token->getName());
         $selected_assignments = $this->resolveSelectedAssignments(
@@ -161,7 +159,7 @@ class SkillAssignmentTableActions
         if ($selected_assignments === []) {
             $error_message = $action->getSelectionErrorMessage() ?? $this->lng->txt('no_valid_participant_selection');
             $this->tpl->setOnScreenMessage(
-                \ilGlobalTemplateInterface::MESSAGE_TYPE_FAILURE,
+                GlobalTemplate::MESSAGE_TYPE_FAILURE,
                 $error_message,
                 true
             );
@@ -174,7 +172,7 @@ class SkillAssignmentTableActions
                 ->withParameter($action_type_token, self::SUBMIT_ACTION),
             $this->pool_request->getRequest(),
             $selected_assignments,
-            $selected_assignments_from_request === 'ALL_OBJECTS'
+            $selected_assignments_from_request === self::ALL_OBJECTS
         );
     }
 
@@ -185,10 +183,10 @@ class SkillAssignmentTableActions
      */
     protected function resolveSelectedAssignments(SkillAssignmentTableAction $action, array|string $selected_assignments): array
     {
-        if ($selected_assignments === 'ALL_OBJECTS') {
+        if ($selected_assignments === self::ALL_OBJECTS) {
             return array_filter(
                 $this->assignment_list->getAssignmentsByQuestionId($this->pool_request->getQuestionId()),
-                fn(ilAssQuestionSkillAssignment $assignment) => $action->allowActionForRecord($assignment)
+                static fn(ilAssQuestionSkillAssignment $assignment) => $action->allowActionForRecord($assignment)
             );
         }
 
@@ -197,7 +195,7 @@ class SkillAssignmentTableActions
                 fn(int $user_id) => current($this->assignment_list->getAssignmentsByQuestionId($this->pool_request->getQuestionId())),
                 $selected_assignments
             ),
-            fn(ilAssQuestionSkillAssignment $assignment) => $action->allowActionForRecord($assignment)
+            static fn(ilAssQuestionSkillAssignment $assignment) => $action->allowActionForRecord($assignment)
         );
     }
 }

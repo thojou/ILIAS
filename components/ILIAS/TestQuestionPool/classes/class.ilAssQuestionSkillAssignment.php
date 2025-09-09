@@ -270,10 +270,11 @@ class ilAssQuestionSkillAssignment
         }
 
         $root_node = reset($path);
-        if (isset($root_node['skl_tree_id'])) {
+        $skl_tree_id = $root_node['skl_tree_id'] ?? null;
+        if (is_int($skl_tree_id)) {
             array_unshift(
                 $nodes,
-                htmlspecialchars($this->skill_tree_service->getObjSkillTreeById($root_node['skl_tree_id'])->getTitle())
+                htmlspecialchars($this->skill_tree_service->getObjSkillTreeById($skl_tree_id)->getTitle())
             );
         }
 

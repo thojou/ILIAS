@@ -1,16 +1,32 @@
 <?php
 
-use ILIAS\Badge\Modal;
+/**
+ * This file is part of ILIAS, a powerful learning management system
+ * published by ILIAS open source e-Learning e.V.
+ *
+ * ILIAS is licensed with the GPL-3.0,
+ * see https://www.gnu.org/licenses/gpl-3.0.en.html
+ * You should have received a copy of said license along with the
+ * source code, too.
+ *
+ * If this is not the case or you just want to try ILIAS, you'll find
+ * us at:
+ * https://www.ilias.de
+ * https://github.com/ILIAS-eLearning
+ *
+ *********************************************************************/
+
+declare(strict_types=1);
+
 use ILIAS\Data\Order;
 use ILIAS\Data\Range;
-use ILIAS\HTTP\Services;
 use ILIAS\TestQuestionPool\RequestDataCollector;
 use ILIAS\UI\Component\Component;
+use ILIAS\UI\Component\Modal\Modal;
 use ILIAS\UI\Component\Table\DataRetrieval;
 use ILIAS\UI\Component\Table\DataRowBuilder;
 use ILIAS\UI\Factory as UIFactory;
 use ILIAS\UI\URLBuilder;
-use ILIAS\UI\URLBuilderToken;
 
 class SkillAssignmentTable implements DataRetrieval
 {
@@ -28,38 +44,33 @@ class SkillAssignmentTable implements DataRetrieval
 
     public function execute(URLBuilder $url_builder): ?Modal
     {
-        $this->table_actions->execute(...$this->acquireParameters($url_builder));
+        return $this->table_actions->execute(...$this->acquireParameters($url_builder));
     }
 
     /**
-     * @param URLBuilder      $url_builder
-     * @param URLBuilderToken $row_id_token
-     * @param URLBuilderToken $action_token
-     * @param URLBuilderToken $action_type_token
+     * @param URLBuilder $url_builder
      *
      * @return array<Component>
      */
-    public function getComponents(
-        URLBuilder $url_builder,
-    ): array
+    public function getComponents(URLBuilder $url_builder): array
     {
         return [
-            $this->ui_factory->table()->data($this, 'Skill Question Assignment', [
-                "competence" => $this->ui_factory->table()->column()->text(
-                    $this->lng->txt('tst_competence')
-                )->withIsSortable(true),
-                "eval_mode" => $this->ui_factory->table()->column()->text(
-                    $this->lng->txt('tst_comp_eval_mode')
-                )->withIsSortable(true),
-                "points" => $this->ui_factory->table()->column()->number(
-                    $this->lng->txt('tst_comp_points')
-                )->withIsSortable(true)
-            ])
-                ->withActions(
-                    $this->table_actions->getEnabledActions(
-                        ...$this->acquireParameters($url_builder)
-                    )
-                )
+            $this->ui_factory->table()->data(
+                $this,
+                'Skill Question Assignment',
+                [
+                    'competence' => $this->ui_factory->table()->column()->text(
+                        $this->lng->txt('tst_competence')
+                    )->withIsSortable(true),
+                    'eval_mode' => $this->ui_factory->table()->column()->text(
+                        $this->lng->txt('tst_comp_eval_mode')
+                    )->withIsSortable(true),
+                    'points' => $this->ui_factory->table()->column()->number(
+                        $this->lng->txt('tst_comp_points')
+                    )->withIsSortable(true)
+                ]
+            )
+                ->withActions($this->table_actions->getEnabledActions(...$this->acquireParameters($url_builder)))
                 ->withRequest($this->pool_request->getRequest())
         ];
     }
@@ -73,7 +84,6 @@ class SkillAssignmentTable implements DataRetrieval
         ?array $additional_parameters
     ): Generator {
         foreach($this->loadRecords() as $record) {
-
             yield $this->table_actions->onDataRow(
                 $row_builder->buildDataRow(
                     "{$record->getQuestionId()}_{$record->getSkillBaseId()}",
@@ -107,11 +117,7 @@ class SkillAssignmentTable implements DataRetrieval
 
     private function loadRecords(): iterable
     {
-        if ($this->records !== null) {
-            return $this->records;
-        }
-
-        $this->records = iterator_to_array(
+        $this->records ??= iterator_to_array(
             $this->assignment_list->getAssignmentsByQuestionId($this->pool_request->getQuestionId())
         );
 

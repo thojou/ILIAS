@@ -29,6 +29,8 @@ use ILIAS\TestQuestionPool\Questions\SuggestedSolution\SuggestedSolutionFile;
 */
 class assQuestionExport
 {
+    public const string ITEM_SOLUTION_HINT = 'solutionhint';
+
     /**
      * @var assQuestion
      */

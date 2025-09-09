@@ -1,8 +1,23 @@
 <?php
 
-use ILIAS\HTTP\Services;
-use ILIAS\Test\Participants\Participant;
-use ILIAS\Test\Participants\ParticipantTableActions;
+/**
+ * This file is part of ILIAS, a powerful learning management system
+ * published by ILIAS open source e-Learning e.V.
+ *
+ * ILIAS is licensed with the GPL-3.0,
+ * see https://www.gnu.org/licenses/gpl-3.0.en.html
+ * You should have received a copy of said license along with the
+ * source code, too.
+ *
+ * If this is not the case or you just want to try ILIAS, you'll find
+ * us at:
+ * https://www.ilias.de
+ * https://github.com/ILIAS-eLearning
+ *
+ *********************************************************************/
+
+declare(strict_types=1);
+
 use ILIAS\TestQuestionPool\Skill\SkillAssignmentTableAction;
 use ILIAS\UI\Component\Modal\Modal;
 use ILIAS\UI\Component\Table\Action\Action;
@@ -18,17 +33,7 @@ class SkillAssignmentTableEditAction implements SkillAssignmentTableAction
 {
     public const string ACTION_ID = 'edit_assignment';
 
-    public function __construct(
-        private readonly ilAssQuestionList $question_list,
-        private readonly ilAssQuestionSkillAssignmentList $assignment_list,
-        private readonly Services $http,
-        private readonly UIFactory $ui_factory,
-        private readonly ILIAS\Refinery\Factory $refinery,
-        private readonly ilLanguage $lng,
-        private readonly ilCtrl $ctrl,
-    )
-    {
-    }
+    public function __construct(private readonly UIFactory $ui_factory, private readonly ilLanguage $lng) {}
 
     public function getActionId(): string
     {
@@ -74,7 +79,8 @@ class SkillAssignmentTableEditAction implements SkillAssignmentTableAction
         array $selected_assignments,
         bool $all_assignments_selected,
     ): ?Modal {
-
+        // TODO: implement
+        return null;
     }
 
     public function allowActionForRecord(ilAssQuestionSkillAssignment $record): bool

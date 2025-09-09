@@ -16,12 +16,16 @@
  *
  *********************************************************************/
 
+use ILIAS\Data\Factory as DataFactory;
+use ILIAS\HTTP\Services as HTTP;
+use ILIAS\Refinery\Factory as Refinery;
 use ILIAS\TestQuestionPool\QuestionPoolDIC;
 use ILIAS\TestQuestionPool\RequestDataCollector;
 use ILIAS\Skill\Service\SkillUsageService;
 use ILIAS\TestQuestionPool\ResponseHandler;
 use ILIAS\UI\Component\Modal\Modal;
-use ILIAS\UI\Component\Table\PresentationRow;
+use ILIAS\UI\Factory as UIFactory;
+use ILIAS\UI\Renderer as UIRenderer;
 use ILIAS\UI\URLBuilder;
 
 /**
@@ -66,6 +70,16 @@ class ilAssQuestionSkillAssignmentsGUI
 
     private SkillUsageService $skillUsageService;
 
+    private UIFactory $ui_factory;
+
+    private UIRenderer $ui_renderer;
+
+    private DataFactory $data_factory;
+
+    private Refinery $refinery;
+
+    private HTTP $http;
+
     /**
      * @param ilCtrl $ctrl
      * @param ilAccessHandler $access
@@ -86,6 +100,11 @@ class ilAssQuestionSkillAssignmentsGUI
 
         global $DIC;
         $this->skillUsageService = $DIC->skills()->usage();
+        $this->ui_factory = $DIC->ui()->factory();
+        $this->ui_renderer = $DIC->ui()->renderer();
+        $this->data_factory = new DataFactory();
+        $this->refinery = $DIC->refinery();
+        $this->http = $DIC->http();
     }
 
     public function getQuestionOrderSequence(): ?array
@@ -467,15 +486,6 @@ class ilAssQuestionSkillAssignmentsGUI
 
     private function showSkillQuestionAssignmentsCmd($loadSkillPointsFromRequest = false): void
     {
-        global $DIC;
-
-        $renderer = $DIC->ui()->renderer();
-        $factory = $DIC->ui()->factory();
-        $data_factory = new \ILIAS\Data\Factory();
-        $refinery = $DIC->refinery();
-        $http = $DIC->http();
-
-
         $this->handleAssignmentConfigurationHintMessage();
 
         $table = $this->buildTableGUI();
@@ -487,12 +497,12 @@ class ilAssQuestionSkillAssignmentsGUI
         $table->setSkillQuestionAssignmentList($assignmentList);
         $table->setData($this->orderQuestionData($this->question_list->getQuestionDataArray()));
 
-        $this->tpl->setContent($table->getHTML() . $renderer->render(
+        $this->tpl->setContent($table->getHTML() . $this->ui_renderer->render(
             (new SkillAssignmentsTable(
                 $this->question_list,
                 $assignmentList,
-                $factory, $this->lng
-            ))->getComponents($data_factory->uri(
+                $this->ui_factory, $this->lng
+            ))->getComponents($this->data_factory->uri(
                 ILIAS_HTTP_PATH . '/' . $this->ctrl->getLinkTargetByClass(
                     ilAssQuestionSkillAssignmentsGUI::class,
                     'editSkillQuestionAssignment'
@@ -503,16 +513,7 @@ class ilAssQuestionSkillAssignmentsGUI
 
     private function editSkillQuestionAssignmentCmd(?Modal $modal = null): void
     {
-        global $DIC;
-
-        $renderer = $DIC->ui()->renderer();
-        $factory = $DIC->ui()->factory();
-        $refinery = $DIC->refinery();
-        $http = $DIC->http();
-
-        $data_factory = new \ILIAS\Data\Factory();
-
-        $url_builder = new URLBuilder($data_factory->uri(
+        $url_builder = new URLBuilder($this->data_factory->uri(
             ILIAS_HTTP_PATH . '/' . $this->ctrl->getLinkTargetByClass(
                 ilAssQuestionSkillAssignmentsGUI::class,
                 'executeAssignmentTableAction'
@@ -526,26 +527,18 @@ class ilAssQuestionSkillAssignmentsGUI
         $components = (new SkillAssignmentTable(
             $this->request_data_collector,
             $assignmentList,
-            $factory,
+            $this->ui_factory,
             $this->lng,
             (new SkillAssignmentTableActions(
                 $this->lng,
                 $this->tpl,
-                $factory,
-                $renderer,
+                $this->ui_factory,
+                $this->ui_renderer,
                 $this->request_data_collector,
-                new ResponseHandler($http),
+                new ResponseHandler($this->http),
                 $assignmentList,
                 [
-                    SkillAssignmentTableEditAction::ACTION_ID => new SkillAssignmentTableEditAction(
-                        $this->question_list,
-                        $assignmentList,
-                        $http,
-                        $factory,
-                        $refinery,
-                        $this->lng,
-                        $this->ctrl
-                    )
+                    SkillAssignmentTableEditAction::ACTION_ID => new SkillAssignmentTableEditAction($this->ui_factory, $this->lng)
                 ]
             ))
         ))->getComponents($url_builder);
@@ -554,26 +547,12 @@ class ilAssQuestionSkillAssignmentsGUI
             $components[] = $modal;
         }
 
-        $this->tpl->setContent(
-            $renderer->render(
-                $components
-            )
-        );
+        $this->tpl->setContent($this->ui_renderer->render($components));
     }
 
     public function executeAssignmentTableActionCmd(): void
     {
-        global $DIC;
-
-        $renderer = $DIC->ui()->renderer();
-        $factory = $DIC->ui()->factory();
-        $refinery = $DIC->refinery();
-        $http = $DIC->http();
-
-        $data_factory = new \ILIAS\Data\Factory();
-
-
-        $url_builder = new URLBuilder($data_factory->uri(
+        $url_builder = new URLBuilder($this->data_factory->uri(
             ILIAS_HTTP_PATH . '/' . $this->ctrl->getLinkTargetByClass(
                 ilAssQuestionSkillAssignmentsGUI::class,
                 'executeAssignmentTableAction'
@@ -588,32 +567,24 @@ class ilAssQuestionSkillAssignmentsGUI
         $table = (new SkillAssignmentTable(
             $this->request_data_collector,
             $assignmentList,
-            $factory,
+            $this->ui_factory,
             $this->lng,
             (new SkillAssignmentTableActions(
                 $this->lng,
                 $this->tpl,
-                $factory,
-                $renderer,
+                $this->ui_factory,
+                $this->ui_renderer,
                 $this->request_data_collector,
-                new ResponseHandler($http),
+                new ResponseHandler($this->http),
                 $assignmentList,
                 [
-                    SkillAssignmentTableEditAction::ACTION_ID => new SkillAssignmentTableEditAction(
-                        $this->question_list,
-                        $assignmentList,
-                        $http,
-                        $factory,
-                        $refinery,
-                        $this->lng,
-                        $this->ctrl
-                    )
+                    SkillAssignmentTableEditAction::ACTION_ID => new SkillAssignmentTableEditAction($this->ui_factory, $this->lng)
                 ]
             ))
         ));
 
         $modal = $table->execute($url_builder);
-        if ($modal !== null) {
+        if ($modal instanceof Modal) {
             $this->editSkillQuestionAssignmentCmd($modal);
             return;
         }
@@ -846,12 +817,9 @@ class ilAssQuestionSkillAssignmentsGUI
     }
 
     /**
-     * @param $questionData
-     *
-     * @return array|mixed
      * @deprecated
      */
-    private function orderQuestionData($questionData)
+    private function orderQuestionData(array $questionData): array
     {
         $orderedQuestionsData = [];
 

@@ -74,7 +74,7 @@ class SkillUsagesTable implements DataRetrieval
     {
         [$order_field, $order_direction] = $order->join(
             '',
-            fn(string $index, string $key, string $value): array => [$key, $value]
+            static fn(string $index, string $key, string $value): array => [$key, $value]
         );
 
         usort($records, static function (array $a, array $b) use ($order_field): int {
@@ -90,11 +90,7 @@ class SkillUsagesTable implements DataRetrieval
 
     private function initRecords(?array $filter_data, ?array $additional_parameters): void
     {
-        if ($this->records !== null) {
-            return;
-        }
-
-        $this->records = $this->collectRecords($filter_data, $additional_parameters);
+        $this->records ??= $this->collectRecords($filter_data, $additional_parameters);
     }
 
     private function limitRecords(array $records, Range $range): array

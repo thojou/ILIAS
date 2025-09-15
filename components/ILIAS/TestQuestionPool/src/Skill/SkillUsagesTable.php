@@ -45,7 +45,11 @@ class SkillUsagesTable implements DataRetrieval
 
     public function getComponent(): Data
     {
-        return $this->ui_factory->table()->data($this, '', $this->getColumns())->withId((string) $this->parent_obj_id);
+        return $this->ui_factory->table()->data(
+            $this,
+            $this->lng->txt('qpl_skl_sub_tab_usages'),
+            $this->getColumns()
+        )->withId((string) $this->parent_obj_id);
     }
 
     public function getColumns(): array
@@ -54,8 +58,8 @@ class SkillUsagesTable implements DataRetrieval
 
         return [
             'skill_title' => $column_factory->text($this->lng->txt('qpl_qst_skl_usg_skill_col')),
-            'num_assigns' => $column_factory->text($this->lng->txt('qpl_qst_skl_usg_numq_col')),
-            'max_points' => $column_factory->text($this->lng->txt('qpl_qst_skl_usg_sklpnt_col'))
+            'num_assigns' => $column_factory->number($this->lng->txt('qpl_qst_skl_usg_numq_col')),
+            'max_points' => $column_factory->number($this->lng->txt('qpl_qst_skl_usg_sklpnt_col'))
         ];
     }
 

@@ -6,7 +6,6 @@ il.UI = il.UI || {};
 		var toogle_node_actions = [];
 
 		this.init = function (component_id, highlight_nodes) {
-			console.log(highlight_nodes, "HERE WE GO");
 			var tree_dom = document.querySelector('#' + component_id);
 			initNodesForActions($(tree_dom));
 			var tree = new TreeLinks(tree_dom);
@@ -512,15 +511,11 @@ il.UI = il.UI || {};
 		};
 
 		TreeitemLink.prototype.handleClick = function (event) {
-			console.log("ITEM HAS BEEN CLICKED");
-
 			if (event.target !== this.domNode
 				&& event.target !== this.domNode.firstElementChild
 				&& this.domNode.getAttribute("data-async_loaded") !== undefined) {
 				return;
 			}
-
-
 
 			if (this.isExpandable) {
 				if (this.isExpanded()) {

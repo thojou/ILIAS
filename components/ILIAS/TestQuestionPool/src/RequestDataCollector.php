@@ -273,12 +273,6 @@ class RequestDataCollector
             $chain = $this->refinery->kindlyTo()->dictOf($chain);
         }
 
-        return $this->http->wrapper()->post()->retrieve(
-            $key,
-            $this->refinery->byTrying([
-                $chain,
-                $this->refinery->always([])
-            ])
-        );
+        return $this->get($key, $this->refinery->byTrying([$chain, $this->refinery->always([])]));
     }
 }

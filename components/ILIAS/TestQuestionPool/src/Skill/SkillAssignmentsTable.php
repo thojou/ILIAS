@@ -21,9 +21,12 @@ declare(strict_types=1);
 use ILIAS\Data\URI;
 use ILIAS\UI\Component\Table\PresentationRow;
 use ILIAS\UI\Factory as UIFactory;
+use ILIAS\UI\Implementation\Component\Input\ViewControl\Mode;
 
 class SkillAssignmentsTable
 {
+    public const string VIEW_CONTROL_QUERY_PARAM = 'mode';
+
     private const string ROW_ID_PARAMETER = 'q_id';
 
     /** @var array<SkillAssignments>|null */
@@ -34,16 +37,18 @@ class SkillAssignmentsTable
         private readonly ilAssQuestionSkillAssignmentList $assignment_list,
         private readonly UIFactory $ui_factory,
         private readonly ilLanguage $lng,
+        private readonly ilCtrl $ctrl,
     ) {}
 
-    public function getComponents(URI $edit_uri): array
+    public function getComponents(URI $edit_uri, SkillAssignmentViewControlMode $skill_assignment_view_control_mode = SkillAssignmentViewControlMode::ALL): array
     {
         return [
             $this->ui_factory->table()->presentation(
-                'Fragen-Kompetenz-Zuordnung',
-                [],
-                fn (PresentationRow $row, SkillAssignments $record) => $this->mapRow($row, $record, $edit_uri)
-            )->withData($this->loadRecords())
+                $this->lng->txt('qpl_skl_sub_tab_quest_assign'),
+                $this->getViewControls($skill_assignment_view_control_mode),
+                fn (PresentationRow $row, SkillAssignments $record): PresentationRow => $this->mapRow($row, $record, $edit_uri)
+            )
+            ->withData($this->loadRecords($skill_assignment_view_control_mode))
         ];
     }
 
@@ -66,7 +71,6 @@ class SkillAssignmentsTable
                 ->withProperty($this->lng->txt('tst_comp_points'), (string) $skill_assignment->getSkillPoints());
         }
 
-        // TODO
         $row = $row
             ->withHeadline($record->getQuestion()['title'])
             ->withSubheadline($record->getQuestion()['description'])
@@ -74,7 +78,7 @@ class SkillAssignmentsTable
                 $this->ui_factory->symbol()->icon()->standard('ques', "")
             )
             ->withContent(
-                !empty($assignments)
+                $assignment_details !== []
                     ? $this->ui_factory->listing()->descriptive($assignment_details)
                     : $this->ui_factory->legacy()->content($this->lng->txt('ui_table_no_records'))
             )
@@ -85,12 +89,13 @@ class SkillAssignmentsTable
                 )
             );
 
-        if (!empty($assignments)) {
+        $assignments = $this->assignment_list->getAssignmentsByQuestionId($record->getQuestion()['question_id']);
+        if ($assignments !== []) {
             $row = $row->withImportantFields([
                 $this->lng->txt('tst_competence') => implode(
                     ', ',
                     array_map(static fn (ilAssQuestionSkillAssignment $a) => $a->getSkillTitle(), $assignments)
-                )
+                ),
             ]);
         }
 
@@ -100,22 +105,56 @@ class SkillAssignmentsTable
     /**
      * @return array<SkillAssignments>
      */
-    public function loadRecords(): array
+    public function loadRecords(SkillAssignmentViewControlMode $skill_assignment_view_control_mode = SkillAssignmentViewControlMode::ALL): array
     {
         if ($this->records !== null) {
             return $this->records;
         }
 
-        //$questions = $this->orderQuestionData($this->question_list->getQuestionDataArray());
-        $questions = $this->question_list->getQuestionDataArray();
         $records = [];
-        foreach($questions as $question_id => $question_data) {
-            $records[] = new SkillAssignments(
-                $question_data,
-                $this->assignment_list->getAssignmentsByQuestionId($question_id)
-            );
+        foreach($this->question_list->getQuestionDataArray() as $question_id => $question_data) {
+            $assignments_by_question_id = $this->assignment_list->getAssignmentsByQuestionId($question_id);
+            if (
+                $skill_assignment_view_control_mode === SkillAssignmentViewControlMode::ASSIGNED
+                && $assignments_by_question_id === []
+            ) {
+                continue;
+            }
+
+            if (
+                $skill_assignment_view_control_mode === SkillAssignmentViewControlMode::UNASSIGNED
+                && $assignments_by_question_id !== []
+            ) {
+                continue;
+            }
+
+            $records[] = new SkillAssignments($question_data, $assignments_by_question_id);
         }
 
         return $this->records = $records;
+    }
+
+    /**
+     * @return Mode[]
+     */
+    private function getViewControls(SkillAssignmentViewControlMode $skill_assignment_view_control_mode = SkillAssignmentViewControlMode::ALL): array
+    {
+        $labeled_actions = [];
+        foreach (SkillAssignmentViewControlMode::cases() as $value) {
+            $this->ctrl->setParameterByClass(
+                ilAssQuestionSkillAssignmentsGUI::class,
+                self::VIEW_CONTROL_QUERY_PARAM,
+                $value->value
+            );
+            $labeled_actions[$this->lng->txt($value->getLabel())] = $this->ctrl->getLinkTargetByClass(
+                ilAssQuestionSkillAssignmentsGUI::class,
+                ilAssQuestionSkillAssignmentsGUI::CMD_SHOW_SKILL_QUEST_ASSIGNS
+            );
+        }
+
+        return [
+            $this->ui_factory->viewControl()->mode($labeled_actions, $this->lng->txt('qpl_skl_view_control_mode_aria'))
+                ->withActive($this->lng->txt($skill_assignment_view_control_mode->getLabel())),
+        ];
     }
 }

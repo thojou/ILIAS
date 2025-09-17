@@ -22,8 +22,6 @@ use ILIAS\Refinery\Factory as Refinery;
 use ILIAS\TestQuestionPool\QuestionPoolDIC;
 use ILIAS\TestQuestionPool\RequestDataCollector;
 use ILIAS\Skill\Service\SkillUsageService;
-use ILIAS\TestQuestionPool\ResponseHandler;
-use ILIAS\UI\Component\Modal\Modal;
 use ILIAS\UI\Factory as UIFactory;
 use ILIAS\UI\Renderer as UIRenderer;
 use ILIAS\UI\URLBuilder;
@@ -385,21 +383,14 @@ class ilAssQuestionSkillAssignmentsGUI
 
         $this->keepAssignmentParameters();
 
-        if ($question_gui === null) {
-            $question_gui = assQuestionGUI::_getQuestionGUI('', $this->request_data_collector->getQuestionId());
-        }
+        $question_id = $this->request_data_collector->getQuestionId();
+        $question_gui ??= assQuestionGUI::_getQuestionGUI('', $question_id);
 
-        if ($assignment === null) {
-            $assignment = $this->buildQuestionSkillAssignment(
-                $this->request_data_collector->getQuestionId(),
-                $this->request_data_collector->int('skill_base_id'),
-                $this->request_data_collector->int('skill_tref_id')
-            );
-        }
+        $row_id_parameter = $this->request_data_collector->strArray(SkillAssignmentTableActions::FULL_ROW_ID_PARAMETER);
+        [1 => $skill_base_id, 2 => $skill_tref_id] = explode('_', $row_id_parameter[0]);
+        $assignment ??= $this->buildQuestionSkillAssignment($question_id, (int) $skill_base_id, (int) $skill_tref_id);
 
-        if ($form === null) {
-            $form = $this->buildSkillQuestionAssignmentPropertiesForm($question_gui->getObject(), $assignment);
-        }
+        $form ??= $this->buildSkillQuestionAssignmentPropertiesForm($question_gui->getObject(), $assignment);
 
         $this->tpl->setContent($form->getHTML() . '<br />' . $this->buildQuestionPage($question_gui));
     }
@@ -411,11 +402,9 @@ class ilAssQuestionSkillAssignmentsGUI
         if ($this->isTestQuestion($question_id)) {
             $question_gui = assQuestionGUI::_getQuestionGUI('', $question_id);
 
-            $assignment = $this->buildQuestionSkillAssignment(
-                $question_id,
-                $this->request_data_collector->int('skill_base_id'),
-                $this->request_data_collector->int('skill_tref_id')
-            );
+            $row_id_parameter = $this->request_data_collector->strArray(SkillAssignmentTableActions::FULL_ROW_ID_PARAMETER);
+            [1 => $skill_base_id, 2 => $skill_tref_id] = explode('_', $row_id_parameter[0]);
+            $assignment = $this->buildQuestionSkillAssignment($question_id, (int) $skill_base_id, (int) $skill_tref_id);
 
             $this->keepAssignmentParameters();
             $form = $this->buildSkillQuestionAssignmentPropertiesForm($question_gui->getObject(), $assignment);
@@ -484,7 +473,7 @@ class ilAssQuestionSkillAssignmentsGUI
         return $form;
     }
 
-    private function showSkillQuestionAssignmentsCmd($loadSkillPointsFromRequest = false): void
+    private function showSkillQuestionAssignmentsCmd(bool $loadSkillPointsFromRequest = false): void
     {
         $this->handleAssignmentConfigurationHintMessage();
 
@@ -497,32 +486,49 @@ class ilAssQuestionSkillAssignmentsGUI
         $table->setSkillQuestionAssignmentList($assignmentList);
         $table->setData($this->orderQuestionData($this->question_list->getQuestionDataArray()));
 
+        /** @var string $mode */
+        $mode = $this->http->wrapper()->query()->retrieve(
+            SkillAssignmentsTable::VIEW_CONTROL_QUERY_PARAM,
+            $this->refinery->byTrying([
+              $this->refinery->kindlyTo()->string(),
+              $this->refinery->always(SkillAssignmentViewControlMode::ALL->value),
+            ])
+        );
+
+        $edit_uri = $this->data_factory->uri(
+            ILIAS_HTTP_PATH . '/' . $this->ctrl->getLinkTargetByClass(
+                self::class,
+                'editSkillQuestionAssignment'
+            )
+        );
+
+        // TODO: Remove legacy table and related code
         $this->tpl->setContent($table->getHTML() . $this->ui_renderer->render(
             (new SkillAssignmentsTable(
                 $this->question_list,
                 $assignmentList,
-                $this->ui_factory, $this->lng
-            ))->getComponents($this->data_factory->uri(
-                ILIAS_HTTP_PATH . '/' . $this->ctrl->getLinkTargetByClass(
-                    ilAssQuestionSkillAssignmentsGUI::class,
-                    'editSkillQuestionAssignment'
-                )
-            ))
+                $this->ui_factory,
+                $this->lng,
+                $this->ctrl,
+            ))->getComponents(
+                $edit_uri,
+                SkillAssignmentViewControlMode::tryFrom($mode) ?? SkillAssignmentViewControlMode::ALL
+            )
         ));
     }
 
-    private function editSkillQuestionAssignmentCmd(?Modal $modal = null): void
+    private function editSkillQuestionAssignmentCmd(): void
     {
-        $url_builder = new URLBuilder($this->data_factory->uri(
-            ILIAS_HTTP_PATH . '/' . $this->ctrl->getLinkTargetByClass(
-                ilAssQuestionSkillAssignmentsGUI::class,
-                'executeAssignmentTableAction'
-            )
-        ));
-
         $assignmentList = $this->buildSkillQuestionAssignmentList();
         $assignmentList->loadFromDb();
         $assignmentList->loadAdditionalSkillData();
+
+        $edit_uri = $this->data_factory->uri(
+            ILIAS_HTTP_PATH . '/' . $this->ctrl->getLinkTargetByClass(
+                self::class,
+                self::CMD_SHOW_SKILL_QUEST_ASSIGN_PROPERTIES_FORM
+            )
+        );
 
         $components = (new SkillAssignmentTable(
             $this->request_data_collector,
@@ -530,65 +536,12 @@ class ilAssQuestionSkillAssignmentsGUI
             $this->ui_factory,
             $this->lng,
             (new SkillAssignmentTableActions(
-                $this->lng,
                 $this->tpl,
-                $this->ui_factory,
-                $this->ui_renderer,
-                $this->request_data_collector,
-                new ResponseHandler($this->http),
-                $assignmentList,
-                [
-                    SkillAssignmentTableEditAction::ACTION_ID => new SkillAssignmentTableEditAction($this->ui_factory, $this->lng)
-                ]
+                [SkillAssignmentTableEditAction::ACTION_ID => new SkillAssignmentTableEditAction($this->ui_factory, $this->lng)]
             ))
-        ))->getComponents($url_builder);
-
-        if ($modal !== null) {
-            $components[] = $modal;
-        }
+        ))->getComponents(new URLBuilder($edit_uri));
 
         $this->tpl->setContent($this->ui_renderer->render($components));
-    }
-
-    public function executeAssignmentTableActionCmd(): void
-    {
-        $url_builder = new URLBuilder($this->data_factory->uri(
-            ILIAS_HTTP_PATH . '/' . $this->ctrl->getLinkTargetByClass(
-                ilAssQuestionSkillAssignmentsGUI::class,
-                'executeAssignmentTableAction'
-            )
-        ));
-
-
-        $assignmentList = $this->buildSkillQuestionAssignmentList();
-        $assignmentList->loadFromDb();
-        $assignmentList->loadAdditionalSkillData();
-
-        $table = (new SkillAssignmentTable(
-            $this->request_data_collector,
-            $assignmentList,
-            $this->ui_factory,
-            $this->lng,
-            (new SkillAssignmentTableActions(
-                $this->lng,
-                $this->tpl,
-                $this->ui_factory,
-                $this->ui_renderer,
-                $this->request_data_collector,
-                new ResponseHandler($this->http),
-                $assignmentList,
-                [
-                    SkillAssignmentTableEditAction::ACTION_ID => new SkillAssignmentTableEditAction($this->ui_factory, $this->lng)
-                ]
-            ))
-        ));
-
-        $modal = $table->execute($url_builder);
-        if ($modal instanceof Modal) {
-            $this->editSkillQuestionAssignmentCmd($modal);
-            return;
-        }
-        $this->ctrl->redirectByClass(self::class, 'editSkillQuestionAssignment');
     }
 
     private function isSyncOriginalPossibleAndAllowed($questionId): bool

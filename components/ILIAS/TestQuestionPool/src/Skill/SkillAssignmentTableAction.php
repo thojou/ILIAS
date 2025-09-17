@@ -23,9 +23,7 @@ namespace ILIAS\TestQuestionPool\Skill;
 use ilAssQuestionSkillAssignment;
 use ILIAS\UI\URLBuilder;
 use ILIAS\UI\URLBuilderToken;
-use ILIAS\UI\Component\Modal\Modal;
 use ILIAS\UI\Component\Table\Action\Action;
-use Psr\Http\Message\ServerRequestInterface;
 
 interface SkillAssignmentTableAction
 {
@@ -40,26 +38,5 @@ interface SkillAssignmentTableAction
         URLBuilderToken $action_type_token
     ): Action;
 
-    /**
-     * @param array<ilAssQuestionSkillAssignment> $selected_assignments
-     */
-    public function getModal(
-        URLBuilder $url_builder,
-        array $selected_assignments,
-        bool $all_assignments_selected
-    ): ?Modal;
-
-    /**
-     * @param array<ilAssQuestionSkillAssignment> $selected_assignments
-     */
-    public function onSubmit(
-        URLBuilder $url_builder,
-        ServerRequestInterface $request,
-        array $selected_assignments,
-        bool $all_assignments_selected
-    ): ?Modal;
-
     public function allowActionForRecord(ilAssQuestionSkillAssignment $record): bool;
-
-    public function getSelectionErrorMessage(): ?string;
 }

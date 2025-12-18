@@ -65,7 +65,8 @@ class QuestionTable extends ilAssQuestionList implements Table\DataRetrieval
             $this
         )
         ->withActions($this->getActions())
-        ->withId('qpt' . $this->parent_obj_id . '_' . $this->request_ref_id);
+        ->withId('qpt' . $this->parent_obj_id . '_' . $this->request_ref_id)
+        ->withRange(new Range(0, 25));
     }
 
     /**

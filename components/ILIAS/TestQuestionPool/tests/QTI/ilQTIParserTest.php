@@ -18,13 +18,8 @@
 
 declare(strict_types=1);
 
-use ILIAS\DI\Container;
-use PHPUnit\Framework\TestCase;
-
-class ilQTIParserTest extends TestCase
+class ilQTIParserTest extends assBaseTestCase
 {
-    private ?Container $dic = null;
-
     public function testConstruct(): void
     {
         $this->assertInstanceOf(ilQTIParser::class, new ilQTIParser('dummy import dir', 'dummy xml file'));
@@ -39,20 +34,5 @@ class ilQTIParserTest extends TestCase
         $instance->setTestObject($test);
         $this->assertEquals($test, $instance->tst_object);
         $this->assertEquals($id, $instance->tst_id);
-    }
-
-    protected function setUp(): void
-    {
-        global $DIC;
-        $this->dic = is_object($DIC) ? clone $DIC : $DIC;
-        $DIC = new Container();
-        $DIC['ilUser'] = $this->createMock(ilObjUser::class);
-        $DIC['lng'] = $this->createMock(ilLanguage::class);
-    }
-
-    protected function tearDown(): void
-    {
-        global $DIC;
-        $DIC = $this->dic;
     }
 }

@@ -21,6 +21,7 @@ declare(strict_types=1);
 namespace ILIAS\Component\Setup;
 
 use ILIAS\Setup;
+use ILIAS\COPage\Setup\EditorAssetVersionObjective;
 use ILIAS\Component\Resource\PublicAssetManager;
 
 class PublicAssetsBuildObjective implements Setup\Objective
@@ -48,7 +49,9 @@ class PublicAssetsBuildObjective implements Setup\Objective
 
     public function getPreconditions(Setup\Environment $environment): array
     {
-        return [];
+        return [
+            new EditorAssetVersionObjective(),
+        ];
     }
 
     public function achieve(Setup\Environment $environment): Setup\Environment

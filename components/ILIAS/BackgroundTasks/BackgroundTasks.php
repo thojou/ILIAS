@@ -21,6 +21,8 @@ declare(strict_types=1);
 namespace ILIAS;
 
 use ILIAS\Component\Component;
+use ILIAS\Component\Resource\PublicAsset;
+use ILIAS\Component\Resource\ComponentJS;
 use ILIAS\Setup\Agent;
 use ILIAS\Refinery\Factory;
 
@@ -40,5 +42,8 @@ class BackgroundTasks implements Component
             new \ILIAS\BackgroundTasks\Setup\Agent(
                 $pull[Factory::class]
             );
+
+        $contribute[PublicAsset::class] = fn(): ComponentJS =>
+            new ComponentJS($this, "background_task_refresh.js");
     }
 }

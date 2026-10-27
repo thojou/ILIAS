@@ -16,6 +16,8 @@
  *
  *********************************************************************/
 
+namespace ILIAS\FileServices\Download;
+
 use ILIAS\BackgroundTasks\Bucket;
 use ILIAS\BackgroundTasks\Implementation\Tasks\AbstractUserInteraction;
 use ILIAS\BackgroundTasks\Implementation\Tasks\UserInteraction\UserInteractionOption;
@@ -27,17 +29,11 @@ use ILIAS\BackgroundTasks\Types\Type;
 use ILIAS\BackgroundTasks\Value;
 use ILIAS\Filesystem\Util\LegacyPathHelper;
 
-/**
- * Description of class class
- *
- * @author Stefan Meyer <smeyer.ilias@gmx.de>
- *
- */
-class ilDownloadZipInteraction extends AbstractUserInteraction
+class DownloadZipInteraction extends AbstractUserInteraction
 {
     public const OPTION_DOWNLOAD = 'download';
     public const OPTION_CANCEL = 'cancel';
-    private ?ilLogger $logger;
+    private ?\ilLogger $logger;
 
 
     public function __construct()
@@ -108,7 +104,7 @@ class ilDownloadZipInteraction extends AbstractUserInteraction
 
             try {
                 $path = LegacyPathHelper::createRelativePath($zip_name->getValue());
-            } catch (InvalidArgumentException) {
+            } catch (\InvalidArgumentException) {
                 $path = null;
             }
             if (!is_null($path) && $filesystem->has($path)) {
@@ -120,7 +116,7 @@ class ilDownloadZipInteraction extends AbstractUserInteraction
 
         $this->logger->info("Delivering File.");
 
-        ilFileDelivery::deliverFileAttached($download_name->getValue(), $zip_name->getValue());
+        \ilFileDelivery::deliverFileAttached($download_name->getValue(), $zip_name->getValue());
 
         return new ThunkValue();
     }

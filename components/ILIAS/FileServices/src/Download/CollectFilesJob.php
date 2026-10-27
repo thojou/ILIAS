@@ -16,6 +16,8 @@
  *
  *********************************************************************/
 
+namespace ILIAS\FileServices\Download;
+
 use ILIAS\BackgroundTasks\Observer;
 use ILIAS\BackgroundTasks\Implementation\Tasks\AbstractJob;
 use ILIAS\BackgroundTasks\Implementation\Values\ScalarValues\BooleanValue;
@@ -23,23 +25,15 @@ use ILIAS\BackgroundTasks\Types\SingleType;
 use ILIAS\BackgroundTasks\Types\Type;
 use ILIAS\BackgroundTasks\Value;
 
-/**
- * Description of class class
- *
- * @author Lukas Zehnder <lz@studer-raimann.ch>
- *
- */
-class ilCollectFilesJob extends AbstractJob
+class CollectFilesJob extends AbstractJob
 {
-    use ilObjFileSecureString;
+    use \ilObjFileSecureString;
 
-    private ?ilLogger $logger;
+    private ?\ilLogger $logger;
     /**
-     * Holds the target mapped to the number of duplicates.
-     * @see ilCollectFilesJob::getFileDirs()
      * @var array<string, int>
      */
-    private static array $targets = [];
+    private static array $duplicate_count_by_target = [];
 
     /**
      * Construct
@@ -58,7 +52,7 @@ class ilCollectFilesJob extends AbstractJob
     {
         return
             [
-                new SingleType(ilCopyDefinition::class),
+                new SingleType(CopyDefinition::class),
                 new SingleType(BooleanValue::class),
             ];
     }
@@ -69,7 +63,7 @@ class ilCollectFilesJob extends AbstractJob
      */
     public function getOutputType(): Type
     {
-        return new SingleType(ilCopyDefinition::class);
+        return new SingleType(CopyDefinition::class);
     }
 
 
@@ -96,8 +90,8 @@ class ilCollectFilesJob extends AbstractJob
         $files = [];
 
         foreach ($object_ref_ids as $object_ref_id) {
-            $object = ilObjectFactory::getInstanceByRefId($object_ref_id);
-            if (!$object instanceof ilObject) {
+            $object = \ilObjectFactory::getInstanceByRefId($object_ref_id);
+            if (!$object instanceof \ilObject) {
                 continue;
             }
 
@@ -163,7 +157,7 @@ class ilCollectFilesJob extends AbstractJob
         $user = $DIC->user();
         $ilAccess = $DIC->access();
         if ($ilAccess->checkAccessOfUser($user->getId(), "read", "", $a_ref_id)) {
-            $file = new ilObjFile($a_ref_id);
+            $file = new \ilObjFile($a_ref_id);
             $source_dir = $file->getFile();
 
             if (@!is_file($source_dir)) {
@@ -175,7 +169,7 @@ class ilCollectFilesJob extends AbstractJob
             // invalid on Windows and prevent the archive from being extracted. They are
             // sanitized the same way as the folder names in recurseFolder().
             $filname_with_suffix = $this->ensureSuffix(
-                ilFileUtils::getASCIIFilename($a_file_name),
+                \ilFileUtils::getASCIIFilename($a_file_name),
                 $file->getFileExtension()
             );
 
@@ -184,16 +178,16 @@ class ilCollectFilesJob extends AbstractJob
             // #25025: allow duplicate filenames by appending an incrementing
             // number per duplicate in brackets to the name.
             // Example: test.txt, test (1).txt, test (2).txt, ...
-            if (isset(self::$targets[$target_dir])) {
+            if (isset(self::$duplicate_count_by_target[$target_dir])) {
                 $target_info = pathinfo($target_dir);
                 $filename = $target_info["filename"];
                 $extension = isset($target_info["extension"]) ? "." . $target_info["extension"] : "";
                 // pathinfo() returns the name without its directory, therefore the separator
                 // has to be added again, just like above
                 $target_dir = $a_temp_dir . '/' . $filename
-                    . " (" . ++self::$targets[$target_dir] . ")" . $extension;
+                    . " (" . ++self::$duplicate_count_by_target[$target_dir] . ")" . $extension;
             } else {
-                self::$targets[$target_dir] = 0;
+                self::$duplicate_count_by_target[$target_dir] = 0;
             }
 
             return [
@@ -227,7 +221,7 @@ class ilCollectFilesJob extends AbstractJob
         if ($num_recursions <= 1 && $a_initiated_by_folder_action) {
             $temp_dir = $a_temp_dir;
         } else {
-            $temp_dir = $a_temp_dir . '/' . ilFileUtils::getASCIIFilename($a_folder_name);
+            $temp_dir = $a_temp_dir . '/' . \ilFileUtils::getASCIIFilename($a_folder_name);
         }
 
         $subtree = $tree->getChildsByTypeFilter($a_ref_id, ["fold", "file"]);
@@ -236,7 +230,7 @@ class ilCollectFilesJob extends AbstractJob
             if (!$ilAccess->checkAccess("read", "", $child["ref_id"])) {
                 continue;
             }
-            if (ilObject::_isInTrash($child["ref_id"])) {
+            if (\ilObject::_isInTrash($child["ref_id"])) {
                 continue;
             }
             if ($child["type"] == "fold") {

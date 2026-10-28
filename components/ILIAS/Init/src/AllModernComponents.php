@@ -21,6 +21,7 @@ declare(strict_types=1);
 namespace ILIAS\Init;
 
 use ILIAS\KeyValueStorage\Services as KeyValueStorage;
+use ILIAS\BackgroundTasks\Registry\Registry as BackgroundTasksRegistry;
 use ILIAS\WebDAV\Environment;
 use ILIAS\HTTP\GlobalHttpState;
 use ILIAS\FileDelivery\FileDeliveryServices;
@@ -148,7 +149,8 @@ class AllModernComponents implements \ILIAS\Component\EntryPoint
         protected Logging\Config\ConfigInterface $logging_config,
         protected ConditionTypes $lso_condition_types,
         protected \ILIAS\LTI\View $lti_view,
-        protected KeyValueStorage $key_value_storage
+        protected KeyValueStorage $key_value_storage,
+        protected BackgroundTasksRegistry $background_tasks_registry
     ) {
     }
 
@@ -263,6 +265,7 @@ class AllModernComponents implements \ILIAS\Component\EntryPoint
         $DIC[ConditionTypes::class] = fn(): ConditionTypes => $this->lso_condition_types;
         $DIC['lti'] = fn(): \ILIAS\LTI\View => $this->lti_view;
         $DIC[KeyValueStorage::class] = fn(): KeyValueStorage => $this->key_value_storage;
+        $DIC[BackgroundTasksRegistry::class] = fn(): BackgroundTasksRegistry => $this->background_tasks_registry;
     }
 
     public function getName(): string

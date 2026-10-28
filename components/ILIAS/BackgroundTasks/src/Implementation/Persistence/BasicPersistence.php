@@ -451,6 +451,7 @@ class BasicPersistence implements Persistence
     private function loadValue($valueContainerId, Bucket $bucket, BucketContainer $bucketContainer): Value
     {
         global $DIC;
+        $registry = $DIC->backgroundTasks()->registry();
         $factory = $DIC->backgroundTasks()->injector();
 
         /** @var ValueContainer $valueContainer */
@@ -463,7 +464,9 @@ class BasicPersistence implements Persistence
         /** @noinspection PhpIncludeInspection */
 
         /** @var Value $value */
-        $value = $factory->createInstance($valueContainer->getClassName());
+        $value = $registry->isRegistered($valueContainer->getClassName())
+            ? $registry->newValue($valueContainer->getClassName())
+            : $factory->createInstance($valueContainer->getClassName());
 
         $value->unserialize($valueContainer->getSerialized());
         if ($valueContainer->getHasParenttask() !== 0) {

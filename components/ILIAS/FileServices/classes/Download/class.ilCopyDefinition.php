@@ -15,24 +15,15 @@
  * https://github.com/ILIAS-eLearning
  *
  *********************************************************************/
-
 declare(strict_types=1);
 
-namespace ILIAS;
+use ILIAS\FileServices\Download\CopyDefinition;
 
-use ILIAS\Component\Component;
-
-class BackgroundTasks_ implements Component
+/**
+ * Buckets created before ILIAS 12 still reference this name.
+ *
+ * @deprecated will be removed with ILIAS 13, use {@see CopyDefinition} instead.
+ */
+class ilCopyDefinition extends CopyDefinition
 {
-    public function init(
-        array | \ArrayAccess &$define,
-        array | \ArrayAccess &$implement,
-        array | \ArrayAccess &$use,
-        array | \ArrayAccess &$contribute,
-        array | \ArrayAccess &$seek,
-        array | \ArrayAccess &$provide,
-        array | \ArrayAccess &$pull,
-        array | \ArrayAccess &$internal,
-    ): void {
-    }
 }

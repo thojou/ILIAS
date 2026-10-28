@@ -1723,8 +1723,8 @@ class ilInitialisation
         $sync = $sync ?: 'sync'; // The default value is sync.
 
         // populated by AllModernComponents, empty for scripts calling initILIAS() directly
-        if (!isset($c["bt.registry"])) {
-            $c["bt.registry"] = function ($c) {
+        if (!isset($c[\ILIAS\BackgroundTasks\Registry\Registry::class])) {
+            $c[\ILIAS\BackgroundTasks\Registry\Registry::class] = function ($c) {
                 return new \ILIAS\BackgroundTasks\Implementation\Registry\BasicRegistry([], []);
             };
         }
@@ -1732,7 +1732,7 @@ class ilInitialisation
         $c["bt.task_factory"] = function ($c) {
             return new \ILIAS\BackgroundTasks\Implementation\Tasks\BasicTaskFactory(
                 $c["di.injector"],
-                $c["bt.registry"]
+                $c[\ILIAS\BackgroundTasks\Registry\Registry::class]
             );
         };
 

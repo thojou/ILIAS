@@ -265,7 +265,7 @@ class AllModernComponents implements \ILIAS\Component\EntryPoint
         $DIC[ConditionTypes::class] = fn(): ConditionTypes => $this->lso_condition_types;
         $DIC['lti'] = fn(): \ILIAS\LTI\View => $this->lti_view;
         $DIC[KeyValueStorage::class] = fn(): KeyValueStorage => $this->key_value_storage;
-        $DIC['bt.registry'] = fn(): BackgroundTasksRegistry => $this->background_tasks_registry;
+        $DIC[BackgroundTasksRegistry::class] = fn(): BackgroundTasksRegistry => $this->background_tasks_registry;
     }
 
     public function getName(): string

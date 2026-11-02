@@ -116,6 +116,9 @@ msgstr ""
 msgid "book_confirm_delete"
 msgstr ""
 
+msgid "book_confirm_delete_booking"
+msgstr ""
+
 msgid "book_confirm_remove_participant"
 msgstr ""
 

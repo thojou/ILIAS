@@ -119,6 +119,9 @@ msgstr "Die ausgewählten Buchungen werden storniert."
 msgid "book_confirm_delete"
 msgstr "Sind Sie sicher, dass Sie die folgenden Angebote löschen wollen inklusive aller zugehörigen Zeitfenster? Dabei werden auch alle zugehörigen Buchungen gelöscht."
 
+msgid "book_confirm_delete_booking"
+msgstr "Sind Sie sicher, dass Sie die folgenden Buchungen löschen möchten?"
+
 msgid "book_confirm_remove_participant"
 msgstr "Sind Sie sicher, dass Sie die folgende(n) Teilnehmer entfernen wollen? Dabei werden alle zugehörigen Buchungen gelöscht."
 

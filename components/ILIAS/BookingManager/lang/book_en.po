@@ -119,6 +119,9 @@ msgstr "The selected bookings will be cancelled."
 msgid "book_confirm_delete"
 msgstr "Are you sure you want to delete the following items including all related time slots? This will also delete all related Bookings."
 
+msgid "book_confirm_delete_booking"
+msgstr "Are you sure you want to delete the following booking(s)?"
+
 msgid "book_confirm_remove_participant"
 msgstr "Are you sure you want to remove the following Participant(s)? This will delete all related Bookings."
 

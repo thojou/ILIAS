@@ -1097,7 +1097,7 @@ class ilObjTestGUI extends ilObjectGUI implements ilCtrlBaseClassInterface, ilDe
 
         $gui->initQuestion($question_gui, $this->getTestObject()->getId());
         $gui->initPreviewSettings($this->getTestObject()->getRefId());
-        $gui->initPreviewSession($this->user->getId(), $this->testrequest->getQuestionId());
+        $gui->initPreviewSession($this->user->getId(), $gui->getObject()->getId());
         $gui->initStyleSheets();
 
         $this->ctrl->clearParameterByClass(self::class, 'q_id');

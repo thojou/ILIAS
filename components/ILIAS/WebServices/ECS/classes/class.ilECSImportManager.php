@@ -133,7 +133,7 @@ class ilECSImportManager
             'AND ' . $this->db->in('type', ilECSUtils::getPossibleRemoteTypes(), false, 'text');
         $res = $this->db->query($query);
         while ($row = $res->fetchRow(ilDBConstants::FETCHMODE_OBJECT)) {
-            $all[$row->econtent_id] = $row->obj_id;
+            $all[$row->econtent_id] = (int) $row->obj_id;
         }
 
         return $all;
